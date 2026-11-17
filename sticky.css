@@ -1,0 +1,55 @@
+/* ===== Sticky papers panel (left side on wide screens) ===== */
+.pad{position:relative;width:200px;height:230px;margin:0 auto 16px}
+.pad-hint{text-align:center;color:var(--mute);font-size:12px;margin:0 0 12px}
+
+.sheet{
+  position:absolute;inset:0;border-radius:4px;background:#fff8c5;color:#1b1f2a;
+  box-shadow:0 6px 14px rgba(0,0,0,.18);cursor:pointer;
+  transform:rotate(var(--r)) translateY(calc(var(--i) * -4px));
+  transition:transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:#8a6d00;
+  user-select:none;
+}
+.sheet:nth-child(1){--r:-4deg;--i:0}
+.sheet:nth-child(2){--r:3deg;--i:1}
+.sheet:nth-child(3){--r:-2deg;--i:2}
+.sheet:nth-child(4){--r:5deg;--i:3}
+.sheet.top:hover{transform:rotate(0) translateY(-10px);box-shadow:0 14px 24px rgba(0,0,0,.25)}
+.sheet.lift{transform:translate(0,-140px) rotate(0) scale(1.08);box-shadow:0 20px 30px rgba(0,0,0,.3);opacity:0;transition:transform .4s ease, opacity .4s ease}
+.sheet.reset{transition:none}
+
+/* ===== Temporary notes ===== */
+.notes{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.note{
+  position:relative;width:150px;min-height:90px;padding:10px 12px 12px;border-radius:3px;
+  background:#fff176;color:#1b1f2a;font-size:13px;line-height:1.5;box-shadow:0 4px 10px rgba(0,0,0,.18);
+  animation:noteIn .45s cubic-bezier(.2,.9,.3,1.2) both;word-break:break-word;
+}
+.note:nth-child(odd){transform:rotate(-2deg)}
+.note:nth-child(even){transform:rotate(2deg)}
+.note.fade{animation:noteOut .5s ease forwards}
+.note .x{position:absolute;top:2px;left:4px;border:0;background:none;color:#8a6d00;cursor:pointer;font-size:16px}
+.note small{display:block;margin-top:6px;color:#8a6d00;font-size:11px}
+@keyframes noteIn{from{opacity:0;transform:scale(.5) rotate(-12deg)}to{opacity:1}}
+@keyframes noteOut{to{opacity:0;transform:translateY(12px) scale(.9)}}
+
+/* ===== Editor overlay ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
+.overlay.show{display:flex;animation:fadeIn .25s ease}
+.big-paper{
+  width:min(340px,90vw);padding:16px;border-radius:4px;background:#fff8c5;color:#1b1f2a;
+  box-shadow:0 20px 40px rgba(0,0,0,.35);transform:rotate(-1deg);animation:dropIn .45s cubic-bezier(.2,.9,.3,1.1) both;
+}
+.big-paper h3{margin:0 0 8px;font-size:16px;color:#8a6d00}
+.big-paper textarea{width:100%;height:150px;border:0;background:transparent;font:inherit;font-size:15px;resize:none;outline:none;color:#1b1f2a}
+.big-paper .btns{display:flex;gap:8px;margin-top:10px}
+.big-paper button{flex:1;padding:8px;border-radius:6px;border:1px solid #c9a800;background:transparent;color:#1b1f2a;font:inherit;cursor:pointer}
+.big-paper button.save{background:#c9a800;color:#fff;font-weight:700}
+@keyframes dropIn{from{opacity:0;transform:translateY(-40px) rotate(-6deg) scale(.9)}to{opacity:1;transform:rotate(-1deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ===== Layout: panel on the left on wide screens ===== */
+@media(min-width:1200px){
+  .pad-wrap{position:fixed;left:24px;top:110px;width:220px}
+  .wrap{margin:0 0 0 260px}
+}

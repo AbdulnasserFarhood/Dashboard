@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/sticky.css">
+</head>
+<body>
+<div class="wrap">
+<header class="box">
+<h1>Dashboard</h1>
+<div class="refs"><b>Reference</b>
+<a href="https://www.robogeex.com/odoo/action-469" target="_blank" rel="noopener">Odoo Project</a>
+<a href="https://docs.google.com/spreadsheets/d/1vwyVNssXRv9qkyr4-oxSxq-Lwpf6xUuUGp1vSsO6jZo/edit?gid=174213715#gid=174213715" target="_blank" rel="noopener">Task Log</a>
+<a href="https://app.diagrams.net/" target="_blank" rel="noopener">Diagram</a></div>
+</header>
+
+<section class="box sup">
+<div class="nm"><small>اسم المشرف</small><strong>Abdulnasser</strong><div class="stat" id="s0"></div><div id="l0"></div></div>
+<button class="plus" data-i="0" title="إضافة مهمة">+</button>
+</section>
+
+<section class="cols" id="cols"></section>
+<div class="msg" id="status">جارٍ تحميل المهام…</div>
+<footer>البيانات تُقرأ مباشرة من سجل المهام اليومي</footer>
+</div>
+
+<dialog id="dlg">
+<form id="f" method="dialog">
+<h2 id="dt">مهمة جديدة</h2>
+<label>الوصف<textarea id="desc" rows="2" required></textarea></label>
+<div class="row"><label>التاريخ<input type="date" id="date" required></label>
+<label>الحالة<select id="st"><option>تم</option><option>جزئي</option><option>لم يكتمل</option></select></label></div>
+<div class="row"><label>وقت البداية<input type="time" id="t1" value="09:00" required></label>
+<label>وقت النهاية<input type="time" id="t2" value="16:00" required></label></div>
+<div class="row"><label>نوع المهمة<select id="ty"></select></label>
+<label>المشروع<select id="pr"></select></label></div>
+<label>ملاحظات<input id="nt"></label>
+<div id="err"></div>
+<div class="act"><button type="button" id="cancel">إلغاء</button><button class="go" id="go">إضافة للشيت</button></div>
+</form>
+</dialog>
+
+<script src="js/app.js"></script>
+<script src="js/sticky.js"></script>
+</body>
+</html>

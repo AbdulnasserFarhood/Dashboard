@@ -1,0 +1,55 @@
+/* ===== Theme variables ===== */
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1b1f2a;--mute:#667085;--line:#d0d5dd;--acc:#4f46e5;--ok:#16a34a;--part:#d97706}
+@media(prefers-color-scheme:dark){:root{--bg:#14171f;--card:#1e2230;--ink:#eceef4;--mute:#9aa3b5;--line:#343a4d;--acc:#8b87ff;--ok:#4ade80;--part:#fbbf24;color-scheme:dark}}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui,sans-serif;padding:20px}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+.box{background:var(--card);border:1.5px solid var(--line);border-radius:12px}
+.msg{text-align:center;color:var(--mute);font-size:13px;padding:8px}
+footer{text-align:center;color:var(--mute);font-size:12px}
+
+/* ===== Header ===== */
+header{direction:ltr;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px}
+header h1{font-size:20px;margin:0}
+.refs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.refs b{color:var(--mute);font-weight:500;font-size:14px}
+.refs a{font-size:13px;padding:5px 12px;border-radius:99px;border:1px solid var(--acc);color:var(--acc);text-decoration:none}
+.refs a:hover{background:var(--acc);color:var(--bg)}
+
+/* ===== Supervisor card ===== */
+.sup{padding:18px 20px;display:flex;align-items:flex-start;gap:12px}
+.sup .nm{flex:1}
+.sup small{display:block;color:var(--mute);font-size:13px;text-align:center}
+.sup strong{display:block;font-size:22px;text-align:center}
+
+/* ===== Buttons ===== */
+.plus{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font-size:20px;cursor:pointer;line-height:1}
+.plus:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ===== Columns ===== */
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.col{padding:12px;min-height:340px}
+.ch{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:6px}
+.ch strong{flex:1;text-align:center}
+.stat{font-size:12px;color:var(--mute);text-align:center;margin-bottom:8px}
+
+/* ===== Task cards ===== */
+.task{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:14px}
+.task .m{display:flex;gap:8px;font-size:12px;color:var(--mute);margin-top:4px}
+.ok{color:var(--ok)}.pt{color:var(--part)}
+
+/* ===== Dialog (add task form) ===== */
+dialog{border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(440px,92vw);padding:18px;font-family:inherit}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 12px;font-size:18px}
+label{display:block;font-size:13px;color:var(--mute);margin-top:10px}
+input,select,textarea{width:100%;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin-top:3px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.act{display:flex;gap:8px;margin-top:16px}
+.act button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.act .go{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:700}
+.act button:disabled{opacity:.6;cursor:wait}
+#err{color:#dc2626;font-size:13px;margin-top:8px;min-height:18px}
