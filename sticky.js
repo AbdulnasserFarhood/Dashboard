@@ -2,7 +2,7 @@
 const NOTE_TTL_MS = 30 * 60 * 1000;   // الملاحظة تختفي بعد 30 دقيقة
 const SHEET_COUNT = 4;                 // عدد الأوراق
 const STORAGE_KEY = 'media-dashboard-notes';
-const BANNER_TEXT = 'هون دائماً بدها تطلع حكمة يومية من اختيارك';
+const BANNER_TEXT = 'حكمة اليوم';
 
 /* الحكم اللي بتطلع لما تضغط الشريط - عدّلها كما تريد */
 const WISDOMS = [
