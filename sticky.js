@@ -1,9 +1,19 @@
-/* ===== إعدادات الملاحظات المؤقتة ===== */
-const NOTE_TTL_MS = 30 * 60 * 1000;   // الملاحظة تختفي بعد 30 دقيقة (غيّر الرقم كما تريد)
-const SHEET_COUNT = 4;                 // عدد الأوراق المكدسة
+/* ===== الإعدادات ===== */
+const NOTE_TTL_MS = 30 * 60 * 1000;   // الملاحظة تختفي بعد 30 دقيقة
+const SHEET_COUNT = 4;                 // عدد الأوراق
 const STORAGE_KEY = 'media-dashboard-notes';
+const BANNER_TEXT = 'هون دائماً بدها تطلع حكمة يومية من اختيارك';
 
-/* ألوان الملاحظات - أضف أو غيّر كما تريد */
+/* الحكم اللي بتطلع لما تضغط الشريط - عدّلها كما تريد */
+const WISDOMS = [
+  'من جدّ وجد، ومن زرع حصد.',
+  'الوقت كالسيف، إن لم تقطعه قطعك.',
+  'اتقن عملك تصل إلى ما تريد.',
+  'خير الكلام ما قل ودل.',
+  'الصبر مفتاح الفرج.'
+];
+
+/* ألوان الملاحظات */
 const NOTE_COLORS = [
   {name:'أصفر',   bg:'#fff176', paper:'#fff8c5'},
   {name:'وردي',   bg:'#f8bbd0', paper:'#fde4ec'},
@@ -12,13 +22,31 @@ const NOTE_COLORS = [
   {name:'برتقالي',bg:'#ffcc80', paper:'#fff0d9'}
 ];
 const DEFAULT_COLOR = NOTE_COLORS[0];
-/* ===================================== */
+
+/* مواقع الأوراق على الحبل ولفّتها */
+const SLOTS = ['8%', '34%', '60%', '86%'];
+const ROTS  = [-4, 3, -2, 5];
+/* ==================== */
 
 (function(){
   const $s = id => document.getElementById(id);
+  const wrap = document.querySelector('.wrap');
   const colorByBg = bg => NOTE_COLORS.find(c => c.bg === bg) || DEFAULT_COLOR;
 
-  /* ----- التخزين (localStorage) ----- */
+  /* ----- الشريط العلوي ----- */
+  const banner = document.createElement('div');
+  banner.className = 'banner';
+  banner.textContent = BANNER_TEXT;
+  banner.title = 'اضغط لحكمة جديدة';
+  banner.addEventListener('click', () => {
+    banner.textContent = WISDOMS[Math.floor(Math.random() * WISDOMS.length)];
+    banner.classList.remove('swap');
+    void banner.offsetWidth;
+    banner.classList.add('swap');
+  });
+  wrap.prepend(banner);
+
+  /* ----- التخزين ----- */
   function readNotes(){
     try{
       const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -32,15 +60,31 @@ const DEFAULT_COLOR = NOTE_COLORS[0];
   let notes = readNotes();
   writeNotes(notes);
 
-  /* ----- بناء اللوحة ----- */
-  const padWrap = document.createElement('aside');
-  padWrap.className = 'pad-wrap';
-  padWrap.innerHTML = `
-    <div class="pad" id="pad"></div>
-    <p class="pad-hint">اضغط الورقة العلوية لتكتب ملاحظة</p>
+  /* ----- منطقة الحبل ----- */
+  const clothes = document.createElement('section');
+  clothes.className = 'clothes';
+  clothes.innerHTML = `
+    <div class="line-area" id="lineArea">
+      <svg class="line-svg" viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true">
+        <path pathLength="100" d="M0 24 Q500 44 1000 24"/>
+      </svg>
+      <div class="pad" id="pad"></div>
+    </div>
+    <p class="pad-hint">اضغط أي ورقة لتكتب ملاحظة</p>
     <div class="notes" id="notes"></div>`;
-  document.querySelector('.wrap').before(padWrap);
+  banner.after(clothes);
 
+  const pad = $s('pad'), notesBox = $s('notes'), area = $s('lineArea');
+  pad.innerHTML = Array.from({length: SHEET_COUNT}, (_, i) => {
+    const k = i % SLOTS.length;
+    return `<div class="sheet" style="--i:${i};--r:${ROTS[k]}deg;--slot:${SLOTS[k]};--d:${(i*0.15).toFixed(2)}s"></div>`;
+  }).join('');
+
+  /* ----- التسلسل: الكومة تظهر، بعدين تنشر على الحبل ----- */
+  setTimeout(() => area.classList.add('in'), 900);
+  setTimeout(() => area.classList.add('spread'), 2200);
+
+  /* ----- المحرر ----- */
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   overlay.id = 'overlay';
@@ -58,15 +102,8 @@ const DEFAULT_COLOR = NOTE_COLORS[0];
     </div>`;
   document.body.appendChild(overlay);
 
-  const pad = $s('pad'), notesBox = $s('notes');
-  const SHEET_COUNT_LOCAL = SHEET_COUNT;
-  pad.innerHTML = Array.from({length: SHEET_COUNT_LOCAL}, () => '<div class="sheet"></div>').join('');
-  const top = () => pad.lastElementChild;
+  let busy = false, activeSheet = null, selected = DEFAULT_COLOR;
 
-  let busy = false;
-  let selected = DEFAULT_COLOR;
-
-  /* ----- اختيار اللون ----- */
   function selectColor(c){
     selected = c;
     $s('bigPaper').style.background = c.paper;
@@ -79,7 +116,7 @@ const DEFAULT_COLOR = NOTE_COLORS[0];
     if (b) selectColor(NOTE_COLORS[+b.dataset.i]);
   });
 
-  /* ----- عرض ملاحظة واحدة ----- */
+  /* ----- عرض ملاحظة ----- */
   function renderNote(n, animate){
     const el = document.createElement('div');
     el.className = 'note';
@@ -89,15 +126,11 @@ const DEFAULT_COLOR = NOTE_COLORS[0];
     const time = new Date(n.created).toLocaleTimeString('ar', {hour:'2-digit', minute:'2-digit'});
     el.innerHTML = `<button class="x" title="حذف">×</button><div class="txt"></div><small>${time}</small>`;
     el.querySelector('.txt').textContent = n.text;
-
     el.querySelector('.x').onclick = () => removeNote(n.id);
-
-    const remaining = n.created + NOTE_TTL_MS - Date.now();
-    setTimeout(() => removeNote(n.id), Math.max(0, remaining));
+    setTimeout(() => removeNote(n.id), Math.max(0, n.created + NOTE_TTL_MS - Date.now()));
     return el;
   }
 
-  /* ----- حذف ملاحظة ----- */
   function removeNote(id){
     const el = notesBox.querySelector(`.note[data-id="${id}"]`);
     notes = notes.filter(n => n.id !== id);
@@ -108,32 +141,31 @@ const DEFAULT_COLOR = NOTE_COLORS[0];
     }
   }
 
-  /* ----- عرض الملاحظات المحفوظة ----- */
   notes.slice().sort((a,b) => b.created - a.created)
        .forEach(n => notesBox.appendChild(renderNote(n, false)));
 
-  /* ----- فتح المحرر ----- */
+  /* ----- اختيار ورقة: ترتفع ثم يفتح المحرر ----- */
   pad.addEventListener('click', e => {
     const sheet = e.target.closest('.sheet');
-    if (!sheet || sheet !== top() || busy) return;
+    if (!sheet || busy || !area.classList.contains('spread')) return;
     busy = true;
-    sheet.classList.add('lift');
+    activeSheet = sheet;
+    sheet.classList.add('picked');
     setTimeout(() => {
       selectColor(DEFAULT_COLOR);
       overlay.classList.add('show');
       $s('noteText').value = '';
       $s('noteText').focus();
-    }, 380);
+    }, 350);
   });
 
   function closeEditor(){
     overlay.classList.remove('show');
-    const sheet = top();
-    if (sheet) sheet.classList.remove('lift');
+    if (activeSheet) activeSheet.classList.remove('picked');
+    activeSheet = null;
     busy = false;
   }
 
-  /* ----- إضافة ملاحظة ----- */
   function addNote(text){
     const created = Date.now();
     const n = {
