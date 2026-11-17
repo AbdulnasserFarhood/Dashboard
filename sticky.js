@@ -2,7 +2,7 @@
 const NOTE_TTL_MS = 30 * 60 * 1000;   // الملاحظة تختفي بعد 30 دقيقة
 const SHEET_COUNT = 4;                 // عدد الأوراق
 const STORAGE_KEY = 'media-dashboard-notes';
-const BANNER_TEXT = 'حكمة اليوم';
+const BANNER_TEXT = 'هون دائماً بدها تطلع حكمة يومية من اختيارك';
 
 /* الحكم اللي بتطلع لما تضغط الشريط - عدّلها كما تريد */
 const WISDOMS = [
@@ -127,6 +127,7 @@ const ROTS  = [-4, 3, -2, 5];
     el.innerHTML = `<button class="x" title="حذف">×</button><div class="txt"></div><small>${time}</small>`;
     el.querySelector('.txt').textContent = n.text;
     el.querySelector('.x').onclick = () => removeNote(n.id);
+    el.addEventListener('pointerdown', startDrag);
     setTimeout(() => removeNote(n.id), Math.max(0, n.created + NOTE_TTL_MS - Date.now()));
     return el;
   }
@@ -139,6 +140,76 @@ const ROTS  = [-4, 3, -2, 5];
       el.classList.add('fade');
       setTimeout(() => el.remove(), 500);
     }
+  }
+
+  /* ----- ترتيب الملاحظات بالماوس (أو باللمس) ----- */
+  function saveOrder(){
+    const ids = [...notesBox.querySelectorAll('.note')].map(n => n.dataset.id);
+    notes = ids.map(id => notes.find(n => n.id === id)).filter(Boolean);
+    writeNotes(notes);
+  }
+
+  function startDrag(e){
+    if (e.button !== 0 || e.target.closest('.x')) return;
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const offX = sx - rect.left, offY = sy - rect.top;
+    let dragging = false, ph = null;
+
+    const begin = () => {
+      dragging = true;
+      ph = document.createElement('div');
+      ph.className = 'note-ph';
+      ph.style.width = rect.width + 'px';
+      ph.style.height = rect.height + 'px';
+      el.before(ph);
+      el.classList.add('dragging');
+      el.style.position = 'fixed';
+      el.style.width = rect.width + 'px';
+      el.style.left = rect.left + 'px';
+      el.style.top = rect.top + 'px';
+    };
+
+    const move = ev => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+        begin();
+      }
+      el.style.left = (ev.clientX - offX) + 'px';
+      el.style.top  = (ev.clientY - offY) + 'px';
+
+      /* لما الماوس يدخل على ملاحظة ثانية، المكان الفاضي ينتقل قبلها أو بعدها */
+      const others = [...notesBox.querySelectorAll('.note:not(.dragging)')];
+      for (const o of others){
+        const r = o.getBoundingClientRect();
+        if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom){
+          const before = ev.clientX < r.left + r.width / 2 || ev.clientY < r.top + r.height / 2;
+          const target = before ? o : o.nextElementSibling;
+          if (target !== ph) notesBox.insertBefore(ph, target);
+          break;
+        }
+      }
+    };
+
+    const end = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', end);
+      el.removeEventListener('pointercancel', end);
+      if (!dragging) return;
+      ph.replaceWith(el);
+      el.classList.remove('dragging');
+      el.style.position = '';
+      el.style.width = '';
+      el.style.left = '';
+      el.style.top = '';
+      saveOrder();
+    };
+
+    el.setPointerCapture(e.pointerId);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
   }
 
   notes.slice().sort((a,b) => b.created - a.created)
