@@ -70,6 +70,7 @@ body{
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 2px}
 .brand{font-size:19px;font-weight:900;display:flex;align-items:center;gap:8px}
 .brand-logo{height:80px;width:auto;display:block}
+.topbar-actions{display:flex;align-items:center;gap:8px}
 .icon-btn{
   width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);
   font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -107,7 +108,7 @@ body{
 .ghost-btn:active .refresh-ic{transform:rotate(180deg)}
 
 /* ===== Quick actions ===== */
-.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .qa-btn{
   border:0;border-radius:var(--radius-md);padding:16px 14px;font:inherit;font-size:15px;font-weight:700;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -116,6 +117,8 @@ body{
 }
 .qa-btn.alt{background:var(--accent);color:#06281f}
 html[data-theme="dark"] .qa-btn.alt{color:#07140f}
+.qa-btn.draw{background:var(--medium);color:#2b1900}
+html[data-theme="dark"] .qa-btn.draw{color:#1f1400}
 .qa-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
 .qa-btn:active{transform:translateY(0)}
 .qa-ic{font-size:18px}
@@ -198,6 +201,8 @@ dialog input:focus,dialog textarea:focus,dialog select:focus{outline:2px solid v
 .actions .primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
 
 footer{text-align:center;color:var(--mute);font-size:12px;padding-top:6px}
+.link-btn{background:none;border:0;color:var(--mute);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;padding:6px 0 0;display:inline-block}
+.link-btn:hover{color:var(--primary)}
 
 /* ===== Responsive ===== */
 @media (max-width:560px){

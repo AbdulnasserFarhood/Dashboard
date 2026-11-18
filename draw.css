@@ -1,0 +1,38 @@
+/* =========================================================
+   مساحتي — لوحة الرسم الحر
+   ========================================================= */
+dialog.draw-dialog{width:min(760px,95vw);padding:16px}
+.draw-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.draw-head h3{margin:0;font-size:17px;font-weight:800}
+
+.draw-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+.draw-colors{display:flex;gap:6px}
+.draw-colors button{
+  width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.draw-colors button.on{border-color:var(--ink);transform:scale(1.15)}
+
+.draw-color-input{
+  width:30px;height:30px;border:0;padding:0;border-radius:50%;cursor:pointer;background:none;
+  -webkit-appearance:none;appearance:none;
+}
+.draw-color-input::-webkit-color-swatch-wrapper{padding:0}
+.draw-color-input::-webkit-color-swatch{border:0;border-radius:50%}
+.draw-color-input::-moz-color-swatch{border:0;border-radius:50%}
+
+.draw-size-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mute)}
+
+.draw-tool-btn{
+  border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:var(--radius-sm);
+  padding:7px 12px;font:inherit;font-size:13px;cursor:pointer;transition:border-color .2s ease,color .2s ease,background .2s ease;
+}
+.draw-tool-btn:hover{border-color:var(--primary);color:var(--primary)}
+.draw-tool-btn.active{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+
+.draw-canvas-wrap{border:1.5px solid var(--line);border-radius:var(--radius-md);overflow:hidden;background:#fff}
+#drawCanvas{display:block;width:100%;height:55vh;touch-action:none;cursor:crosshair}
+
+@media (max-width:560px){
+  #drawCanvas{height:45vh}
+}

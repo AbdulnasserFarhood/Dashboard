@@ -9,14 +9,33 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="notes.css">
 <link rel="stylesheet" href="team.css">
+<link rel="stylesheet" href="draw.css">
+<link rel="stylesheet" href="lock.css">
 </head>
 <body>
+
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-ic">🔒</div>
+    <h2>المساحة مقفلة</h2>
+    <p>أدخل الرمز للمتابعة</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="unlockInput" autocomplete="off">
+    <p class="lock-err" id="unlockErr"></p>
+    <button type="button" id="unlockBtn" class="primary-wide">فتح 🔓</button>
+    <p class="lock-hint">نسيت الرمز؟ لا يمكن استرجاعه من هنا لأنه غير مخزّن كنص — امسح بيانات هذا الموقع من إعدادات المتصفح لإعادة الضبط (سيحذف ذلك أيضاً مهامك وملاحظاتك المحفوظة محلياً).</p>
+  </div>
+</div>
+
 <div class="app">
 
   <header class="topbar">
     <div class="brand">
-<img src="logo.png" alt="مساحتي" class="brand-logo">    </div>
-    <button id="themeToggle" class="icon-btn" title="تبديل المظهر" aria-label="تبديل المظهر الليلي والنهاري">🌙</button>
+      <img src="assets/logo.png" alt="مساحتي" class="brand-logo">
+    </div>
+    <div class="topbar-actions">
+      <button id="lockToggle" class="icon-btn" title="قفل المساحة برمز رقمي" aria-label="قفل المساحة برمز رقمي">🔒</button>
+      <button id="themeToggle" class="icon-btn" title="تبديل المظهر" aria-label="تبديل المظهر الليلي والنهاري">🌙</button>
+    </div>
   </header>
 
   <nav class="tabs" id="tabsNav">
@@ -43,6 +62,9 @@
     </button>
     <button class="qa-btn alt" id="qaNote">
       <span class="qa-ic">🗒️</span> ملاحظة جديدة
+    </button>
+    <button class="qa-btn draw" id="qaDraw">
+      <span class="qa-ic">✏️</span> رسم حر
     </button>
   </section>
 
@@ -112,7 +134,11 @@
     <section class="team-cols" id="teamCols"></section>
   </div>
 
-  <footer>مساحتك الرقمية الخاصة — تُحفظ بياناتك محلياً على هذا الجهاز فقط 🔒</footer>
+  <footer>
+    مساحتك الرقمية الخاصة — تُحفظ بياناتك محلياً على هذا الجهاز فقط 🔒
+    <br>
+    <button type="button" id="managePinLink" class="link-btn">🔐 إدارة قفل المساحة (تغيير/إزالة الرمز)</button>
+  </footer>
 </div>
 
 <dialog id="teamDlg">
@@ -177,6 +203,64 @@
   </form>
 </dialog>
 
+<dialog id="drawDialog" class="draw-dialog">
+  <div class="draw-head">
+    <h3>رسم حر</h3>
+    <button type="button" id="drawClose" class="icon-btn" title="إغلاق">✕</button>
+  </div>
+  <div class="draw-toolbar">
+    <div class="draw-colors" id="drawColors"></div>
+    <input type="color" id="drawCustomColor" class="draw-color-input" title="لون مخصص" value="#1b1f2a">
+    <label class="draw-size-label">السماكة
+      <input type="range" id="drawSize" min="2" max="26" value="5">
+    </label>
+    <button type="button" id="drawEraser" class="draw-tool-btn" title="ممحاة">🧽 ممحاة</button>
+    <button type="button" id="drawClear" class="draw-tool-btn" title="مسح الكل">🗑️ مسح</button>
+    <button type="button" id="drawSave" class="draw-tool-btn primary-ish" title="تنزيل كصورة">⬇️ تنزيل</button>
+  </div>
+  <div class="draw-canvas-wrap">
+    <canvas id="drawCanvas"></canvas>
+  </div>
+</dialog>
+
+<dialog id="setPinDialog">
+  <form id="setPinForm">
+    <h3>تعيين رمز القفل</h3>
+    <p class="field-label">أدخل رمزاً من 4 إلى 8 أرقام</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="newPin1" required>
+    <p class="field-label">أعد إدخال الرمز للتأكيد</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="newPin2" required>
+    <div id="setPinErr" class="team-err"></div>
+    <div class="actions">
+      <button type="button" id="setPinCancel">إلغاء</button>
+      <button type="submit" class="primary">حفظ وقفل الآن 🔒</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="managePinDialog">
+  <h3>إدارة قفل المساحة</h3>
+  <div id="pinStep1">
+    <p class="field-label">أدخل الرمز الحالي</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="currentPinInput" autocomplete="off">
+    <div id="managePinErr" class="team-err"></div>
+    <div class="actions">
+      <button type="button" id="managePinCancel">إلغاء</button>
+      <button type="button" class="primary" id="managePinVerify">متابعة</button>
+    </div>
+  </div>
+  <div id="pinStep2" class="hidden">
+    <p class="field-label">رمز جديد (٤ إلى ٨ أرقام)</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="changePin1" placeholder="رمز جديد" autocomplete="off">
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" id="changePin2" placeholder="تأكيد الرمز الجديد" autocomplete="off" style="margin-top:8px">
+    <div id="pinStep2Err" class="team-err"></div>
+    <div class="actions">
+      <button type="button" id="removePinBtn">🗑️ إزالة القفل نهائياً</button>
+      <button type="button" class="primary" id="saveNewPinBtn">💾 حفظ الرمز الجديد</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="taskEditDialog">
   <form id="taskEditForm">
     <h3>تعديل المهمة</h3>
@@ -200,5 +284,7 @@
 <script src="app.js"></script>
 <script src="notes.js"></script>
 <script src="team.js"></script>
+<script src="draw.js"></script>
+<script src="lock.js"></script>
 </body>
 </html>
