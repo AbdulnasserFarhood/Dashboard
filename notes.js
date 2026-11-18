@@ -8,14 +8,18 @@
   const STORE_KEY = "workspace_notes_v1";
   const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 أيام
 
-  const COLORS = [
-    { key: "yellow", name: "أصفر" },
-    { key: "pink", name: "وردي" },
-    { key: "green", name: "أخضر" },
-    { key: "blue", name: "أزرق" },
-    { key: "peach", name: "خوخي" },
+  // الألوان الجاهزة: الألوان الباردة (الأساسي/الأزرق/الأخضر) أولاً، ثم الدافئة
+  const PRESET_COLORS = [
+    { hex: "#e3dcff", name: "بنفسجي (أساسي)" },
+    { hex: "#d2e9fb", name: "أزرق" },
+    { hex: "#cff4d2", name: "أخضر" },
+    { hex: "#ffe0c2", name: "خوخي" },
+    { hex: "#fff3b0", name: "أصفر" },
+    { hex: "#ffd3e0", name: "وردي" },
   ];
-  const DEFAULT_COLOR = COLORS[0].key;
+  const DEFAULT_COLOR = PRESET_COLORS[0].hex;
+  // توافق مع ملاحظات محفوظة من نسخة سابقة كانت تخزّن اسم اللون بدل قيمته
+  const LEGACY_COLOR_MAP = { yellow: "#fff3b0", pink: "#ffd3e0", green: "#cff4d2", blue: "#d2e9fb", peach: "#ffe0c2" };
 
   const grid = $("notesGrid");
   const addTile = $("addNoteTile");
@@ -35,10 +39,20 @@
   function load() {
     try { notes = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
     catch (e) { notes = []; }
+    notes.forEach((n) => { if (LEGACY_COLOR_MAP[n.color]) n.color = LEGACY_COLOR_MAP[n.color]; });
     const now = Date.now();
     const before = notes.length;
     notes = notes.filter((n) => now - n.createdAt < TTL_MS);
     if (notes.length !== before) save();
+  }
+
+  // يحسب أقرب لون نص مقروء (فاتح أو داكن) فوق أي خلفية يختارها المستخدم
+  function readableInk(hex) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+    if (!m) return "dark";
+    const [r, g, b] = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.55 ? "light" : "dark";
   }
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(notes)); }
@@ -84,8 +98,9 @@
 
   function buildNoteCard(n) {
     const el = document.createElement("div");
-    el.className = `note c-${n.color}` + (n.pinned ? " pinned" : "");
+    el.className = "note" + (n.pinned ? " pinned" : "") + (readableInk(n.color) === "light" ? " ink-light" : "");
     el.dataset.id = n.id;
+    el.style.background = n.color;
     el.style.setProperty("--rot", (seedRotation(n.id)).toFixed(1) + "deg");
 
     const tools = document.createElement("div");
@@ -157,28 +172,50 @@
   }
 
   /* ---------------- محرر الملاحظة (حوار) ---------------- */
+  let customInput = null;
+
   function buildSwatches() {
     swatchBox.innerHTML = "";
-    COLORS.forEach((c) => {
+    PRESET_COLORS.forEach((c) => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "swatch c-" + c.key;
+      b.className = "swatch";
       b.title = c.name;
-      b.style.background = `var(--note-${c.key})`;
-      b.addEventListener("click", () => selectColor(c.key));
+      b.dataset.hex = c.hex;
+      b.style.background = c.hex;
+      b.addEventListener("click", () => selectColor(c.hex));
       swatchBox.appendChild(b);
     });
+
+    // سوتش إضافي يفتح منتقي ألوان النظام — يسمح باختيار أي لون تريده بدقة
+    const wrap = document.createElement("label");
+    wrap.className = "swatch custom-swatch-wrap";
+    wrap.title = "اختر أي لون تريده";
+    customInput = document.createElement("input");
+    customInput.type = "color";
+    customInput.className = "custom-swatch-input";
+    customInput.value = DEFAULT_COLOR;
+    customInput.addEventListener("input", () => selectColor(customInput.value, true));
+    wrap.appendChild(customInput);
+    swatchBox.appendChild(wrap);
   }
-  function selectColor(key) {
-    selectedColor = key;
-    swatchBox.querySelectorAll(".swatch").forEach((b, i) => b.classList.toggle("on", COLORS[i].key === key));
+
+  function selectColor(hex, fromCustom) {
+    selectedColor = hex;
+    swatchBox.querySelectorAll(".swatch:not(.custom-swatch-wrap)").forEach((b) => {
+      b.classList.toggle("on", !fromCustom && b.dataset.hex.toLowerCase() === hex.toLowerCase());
+    });
+    swatchBox.querySelector(".custom-swatch-wrap").classList.toggle("on", !!fromCustom);
+    if (customInput && /^#[0-9a-f]{6}$/i.test(hex)) customInput.value = hex;
   }
 
   function openEditor(note) {
     editingId = note ? note.id : null;
     $("noteDialogTitle").textContent = note ? "تعديل الملاحظة" : "ملاحظة جديدة";
     textArea.value = note ? note.text : "";
-    selectColor(note ? note.color : DEFAULT_COLOR);
+    const color = note ? note.color : DEFAULT_COLOR;
+    const isPreset = PRESET_COLORS.some((c) => c.hex.toLowerCase() === (color || "").toLowerCase());
+    selectColor(color, !isPreset);
     dialog.showModal();
     textArea.focus();
   }
