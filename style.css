@@ -1,55 +1,207 @@
-/* ===== Theme variables ===== */
-:root{--bg:#f5f6f8;--card:#fff;--ink:#1b1f2a;--mute:#667085;--line:#d0d5dd;--acc:#4f46e5;--ok:#16a34a;--part:#d97706}
-@media(prefers-color-scheme:dark){:root{--bg:#14171f;--card:#1e2230;--ink:#eceef4;--mute:#9aa3b5;--line:#343a4d;--acc:#8b87ff;--ok:#4ade80;--part:#fbbf24;color-scheme:dark}}
+/* =========================================================
+   مساحتي — Theme variables & base layout
+   ========================================================= */
+:root{
+  --bg:#f3f4fb;
+  --card:#ffffff;
+  --ink:#1f2333;
+  --ink-soft:#3a3f55;
+  --mute:#6b7085;
+  --line:#e6e8f2;
+  --primary:#6c5ce7;
+  --primary-ink:#ffffff;
+  --primary-soft:#ece9ff;
+  --accent:#00bfa6;
+  --high:#ff6b6b;
+  --high-bg:#ffe3e3;
+  --medium:#f5a623;
+  --medium-bg:#fff2d9;
+  --low:#2ecc71;
+  --low-bg:#def7e9;
+  --radius-lg:20px;
+  --radius-md:14px;
+  --radius-sm:10px;
+  --shadow:0 10px 30px rgba(31,35,51,.07);
+  --shadow-sm:0 4px 12px rgba(31,35,51,.06);
+  color-scheme:light;
+}
+html[data-theme="dark"]{
+  --bg:#12131d;
+  --card:#1a1c2a;
+  --ink:#eceef6;
+  --ink-soft:#c6c9da;
+  --mute:#9aa0b8;
+  --line:#2a2d40;
+  --primary:#9b8cff;
+  --primary-ink:#15162a;
+  --primary-soft:#242649;
+  --accent:#2dd4bf;
+  --high:#ff8787;
+  --high-bg:#3a2230;
+  --medium:#ffc266;
+  --medium-bg:#3a2f1c;
+  --low:#5fe0a0;
+  --low-bg:#1c3328;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+  --shadow-sm:0 4px 14px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
 
-/* ===== Base ===== */
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui,sans-serif;padding:20px}
-.wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
-.box{background:var(--card);border:1.5px solid var(--line);border-radius:12px}
-.msg{text-align:center;color:var(--mute);font-size:13px;padding:8px}
-footer{text-align:center;color:var(--mute);font-size:12px}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Tajawal",system-ui,sans-serif;
+  transition:background .3s ease,color .3s ease;
+}
+.app{max-width:900px;margin:0 auto;padding:18px 18px 50px;display:grid;gap:16px}
+.box{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);
+  padding:20px 22px;
+  transition:background .3s ease,border-color .3s ease;
+}
 
-/* ===== Header ===== */
-header{direction:ltr;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px}
-header h1{font-size:20px;margin:0}
-.refs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.refs b{color:var(--mute);font-weight:500;font-size:14px}
-.refs a{font-size:13px;padding:5px 12px;border-radius:99px;border:1px solid var(--acc);color:var(--acc);text-decoration:none}
-.refs a:hover{background:var(--acc);color:var(--bg)}
+/* ===== Topbar ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 2px}
+.brand{font-size:19px;font-weight:900;display:flex;align-items:center;gap:8px}
+.brand-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:inline-block}
+.icon-btn{
+  width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-sm);transition:transform .2s ease,background .2s ease;
+}
+.icon-btn:hover{transform:translateY(-2px) rotate(-8deg)}
 
-/* ===== Supervisor card ===== */
-.sup{padding:18px 20px;display:flex;align-items:flex-start;gap:12px}
-.sup .nm{flex:1}
-.sup small{display:block;color:var(--mute);font-size:13px;text-align:center}
-.sup strong{display:block;font-size:22px;text-align:center}
+/* ===== Tabs ===== */
+.tabs{display:flex;gap:6px;background:var(--card);padding:6px;border-radius:999px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.tab-btn{
+  flex:1;border:0;background:transparent;padding:10px 8px;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:14px;font-weight:700;color:var(--mute);transition:background .2s ease,color .2s ease;
+}
+.tab-btn.active{background:var(--primary);color:var(--primary-ink)}
+.tab-panel{display:none;gap:16px;grid-template-columns:1fr}
+.tab-panel.active{display:grid}
 
-/* ===== Buttons ===== */
-.plus{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font-size:20px;cursor:pointer;line-height:1}
-.plus:hover{border-color:var(--acc);color:var(--acc)}
+/* ===== Hero / greeting ===== */
+.hero{text-align:center;padding:26px 20px}
+.eyebrow{margin:0 0 6px;color:var(--mute);font-size:13px;letter-spacing:.3px}
+.hero h1{margin:0;font-size:26px;font-weight:900}
 
-/* ===== Columns ===== */
-.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:760px){.cols{grid-template-columns:1fr}}
-.col{padding:12px;min-height:340px}
-.ch{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:6px}
-.ch strong{flex:1;text-align:center}
-.stat{font-size:12px;color:var(--mute);text-align:center;margin-bottom:8px}
+/* ===== Quote card ===== */
+.quote{text-align:center;position:relative;background:linear-gradient(135deg,var(--primary-soft),var(--card));}
+.quote-mark{position:absolute;top:2px;right:18px;font-size:40px;color:var(--primary);opacity:.35;margin:0;font-family:Georgia,serif}
+.quote-text{font-size:17px;line-height:1.9;font-weight:500;margin:4px 30px 14px;color:var(--ink-soft);min-height:30px;transition:opacity .25s ease}
+.quote-text.fade{opacity:0}
+.ghost-btn{
+  border:1.5px solid var(--primary);color:var(--primary);background:transparent;border-radius:999px;
+  padding:7px 16px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:background .2s ease,color .2s ease;
+}
+.ghost-btn:hover{background:var(--primary);color:var(--primary-ink)}
+.refresh-ic{display:inline-block;transition:transform .4s ease}
+.ghost-btn:active .refresh-ic{transform:rotate(180deg)}
 
-/* ===== Task cards ===== */
-.task{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:14px}
-.task .m{display:flex;gap:8px;font-size:12px;color:var(--mute);margin-top:4px}
-.ok{color:var(--ok)}.pt{color:var(--part)}
+/* ===== Quick actions ===== */
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qa-btn{
+  border:0;border-radius:var(--radius-md);padding:16px 14px;font:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--primary);color:var(--primary-ink);box-shadow:var(--shadow-sm);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.qa-btn.alt{background:var(--accent);color:#06281f}
+html[data-theme="dark"] .qa-btn.alt{color:#07140f}
+.qa-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.qa-btn:active{transform:translateY(0)}
+.qa-ic{font-size:18px}
 
-/* ===== Dialog (add task form) ===== */
-dialog{border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(440px,92vw);padding:18px;font-family:inherit}
-dialog::backdrop{background:rgba(0,0,0,.5)}
-dialog h2{margin:0 0 12px;font-size:18px}
-label{display:block;font-size:13px;color:var(--mute);margin-top:10px}
-input,select,textarea{width:100%;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin-top:3px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.act{display:flex;gap:8px;margin-top:16px}
-.act button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;cursor:pointer}
-.act .go{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:700}
-.act button:disabled{opacity:.6;cursor:wait}
-#err{color:#dc2626;font-size:13px;margin-top:8px;min-height:18px}
+/* ===== Cards shared ===== */
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.card-head h2{margin:0;font-size:17px;font-weight:800}
+.hint{font-size:12px;color:var(--mute)}
+
+/* ===== Progress ===== */
+.progress-wrap{display:flex;align-items:center;gap:10px;min-width:160px}
+.progress-bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.progress-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width .4s ease}
+.progress-label{font-size:12px;color:var(--mute);white-space:nowrap}
+
+/* ===== Add task row ===== */
+.add-task-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.add-task-row input[type="text"]{
+  flex:1;min-width:140px;padding:11px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+  background:var(--bg);color:var(--ink);font:inherit;font-size:14px;
+}
+.add-task-row select{
+  padding:11px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px;
+}
+.add-task-row input:focus,.add-task-row select:focus{outline:2px solid var(--primary);outline-offset:1px}
+.add-btn{
+  border:0;border-radius:var(--radius-sm);padding:0 18px;background:var(--primary);color:var(--primary-ink);
+  font:inherit;font-weight:700;cursor:pointer;transition:opacity .2s ease;
+}
+.add-btn:hover{opacity:.9}
+
+/* ===== Task list ===== */
+.task-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.task{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  background:var(--bg);transition:background .2s ease,opacity .2s ease,transform .15s ease;
+  animation:taskIn .25s ease both;
+}
+@keyframes taskIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.task.done{opacity:.55}
+.task.done .task-title{text-decoration:line-through;color:var(--mute)}
+.task-check{
+  width:22px;height:22px;flex-shrink:0;border-radius:50%;border:2px solid var(--line);background:var(--card);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--primary-ink);
+  transition:background .2s ease,border-color .2s ease;
+}
+.task.done .task-check{background:var(--primary);border-color:var(--primary)}
+.task-prio{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.task-prio.high{background:var(--high)}
+.task-prio.medium{background:var(--medium)}
+.task-prio.low{background:var(--low)}
+.task-title{flex:1;font-size:14.5px;word-break:break-word}
+.task-actions{display:flex;gap:4px}
+.task-actions button{
+  width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:var(--mute);cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s ease,color .2s ease;
+}
+.task-actions button:hover{background:var(--line);color:var(--ink)}
+.task-actions .del:hover{color:var(--high)}
+
+.empty-msg{text-align:center;color:var(--mute);font-size:13.5px;padding:18px 0 4px}
+.hidden{display:none}
+
+/* ===== Dialogs (shared) ===== */
+dialog{
+  border:0;border-radius:var(--radius-lg);background:var(--card);color:var(--ink);
+  width:min(420px,92vw);padding:22px;font-family:inherit;box-shadow:var(--shadow);
+}
+dialog::backdrop{background:rgba(10,10,20,.5);backdrop-filter:blur(2px)}
+dialog h3{margin:0 0 14px;font-size:17px;font-weight:800}
+.field-label{font-size:12.5px;color:var(--mute);margin:10px 0 5px}
+dialog input[type="text"],dialog textarea,dialog select{
+  width:100%;padding:10px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+  background:var(--bg);color:var(--ink);font:inherit;font-size:14px;resize:vertical;
+}
+dialog input:focus,dialog textarea:focus,dialog select:focus{outline:2px solid var(--primary);outline-offset:1px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:8px;margin-top:16px}
+.actions button{flex:1;padding:10px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.actions .primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+
+footer{text-align:center;color:var(--mute);font-size:12px;padding-top:6px}
+
+/* ===== Responsive ===== */
+@media (max-width:560px){
+  .quick-actions{grid-template-columns:1fr}
+  .card-head{align-items:flex-start}
+  .app{padding:14px 12px 40px}
+}

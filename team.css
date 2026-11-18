@@ -1,0 +1,33 @@
+/* =========================================================
+   متابعة الفريق — تنسيقات خاصة بقسم الفريق
+   ========================================================= */
+.team-box .refs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.team-box .refs b{color:var(--mute);font-weight:500;font-size:13px}
+.team-box .refs a{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--primary);color:var(--primary);text-decoration:none}
+.team-box .refs a:hover{background:var(--primary);color:var(--primary-ink)}
+
+.team-sup{display:flex;align-items:flex-start;gap:12px;padding:16px 18px}
+.team-sup .nm{flex:1}
+.team-sup small{display:block;color:var(--mute);font-size:12.5px;text-align:center}
+.team-sup strong{display:block;font-size:19px;margin:2px 0;text-align:center}
+.team-sup .stat{font-size:12px;color:var(--mute);text-align:center;margin-bottom:8px}
+
+.team-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.team-cols{grid-template-columns:1fr}}
+.team-col{padding:12px;min-height:160px}
+.team-col .ch{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;margin-bottom:8px}
+.team-col .ch strong{flex:1;text-align:center;font-size:14px}
+.team-col .stat{font-size:11.5px;color:var(--mute);text-align:center;margin-bottom:8px}
+
+.team-task{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:13px;background:var(--bg)}
+.team-task .m{display:flex;gap:8px;font-size:11px;color:var(--mute);margin-top:4px}
+.team-task .ok{color:var(--low)}
+.team-task .pt{color:var(--medium)}
+
+.team-plus{
+  width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);
+  font-size:17px;cursor:pointer;line-height:1;flex-shrink:0;transition:border-color .2s ease,color .2s ease;
+}
+.team-plus:hover{border-color:var(--primary);color:var(--primary)}
+.team-msg{text-align:center;color:var(--mute);font-size:12.5px;padding:8px}
+.team-err{color:var(--high);font-size:13px;margin-top:8px;min-height:18px}

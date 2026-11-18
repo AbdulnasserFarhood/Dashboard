@@ -1,50 +1,203 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<title>مساحتي — لوحة الإنتاجية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="sticky.css">
+<link rel="stylesheet" href="notes.css">
+<link rel="stylesheet" href="team.css">
 </head>
 <body>
-<div class="wrap">
-<header class="box">
-<h1>Dashboard</h1>
-<div class="refs"><b>Reference</b>
-<a href="https://www.robogeex.com/odoo/action-469" target="_blank" rel="noopener">Odoo Project</a>
-<a href="https://docs.google.com/spreadsheets/d/1vwyVNssXRv9qkyr4-oxSxq-Lwpf6xUuUGp1vSsO6jZo/edit?gid=174213715#gid=174213715" target="_blank" rel="noopener">Task Log</a>
-<a href="https://app.diagrams.net/" target="_blank" rel="noopener">Diagram</a></div>
-</header>
+<div class="app">
 
-<section class="box sup">
-<div class="nm"><small>اسم المشرف</small><strong>Abdulnasser</strong><div class="stat" id="s0"></div><div id="l0"></div></div>
-<button class="plus" data-i="0" title="إضافة مهمة">+</button>
-</section>
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span>مساحتي</div>
+    <button id="themeToggle" class="icon-btn" title="تبديل المظهر" aria-label="تبديل المظهر الليلي والنهاري">🌙</button>
+  </header>
 
-<section class="cols" id="cols"></section>
-<div class="msg" id="status">جارٍ تحميل المهام…</div>
-<footer>البيانات تُقرأ مباشرة من سجل المهام اليومي</footer>
+  <nav class="tabs" id="tabsNav">
+    <button class="tab-btn active" type="button" data-tab="personal">🏠 مساحتي الشخصية</button>
+    <button class="tab-btn" type="button" data-tab="team">👥 متابعة الفريق</button>
+  </nav>
+
+  <div class="tab-panel active" id="panel-personal">
+
+  <section class="hero box">
+    <p class="eyebrow" id="dateLine"></p>
+    <h1 id="greeting">أهلاً بك 👋</h1>
+  </section>
+
+  <section class="quote box" id="quoteBox">
+    <p class="quote-mark">“</p>
+    <p class="quote-text" id="quoteText">—</p>
+    <button id="newQuoteBtn" class="ghost-btn" title="عرض اقتباس آخر">اقتباس آخر <span class="refresh-ic">↻</span></button>
+  </section>
+
+  <section class="quick-actions">
+    <button class="qa-btn" id="qaTask">
+      <span class="qa-ic">➕</span> مهمة جديدة
+    </button>
+    <button class="qa-btn alt" id="qaNote">
+      <span class="qa-ic">🗒️</span> ملاحظة جديدة
+    </button>
+  </section>
+
+  <section class="box tasks-card">
+    <div class="card-head">
+      <h2>مهامي اليوم</h2>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-label" id="progressLabel">0 من 0</span>
+      </div>
+    </div>
+
+    <form id="addTaskForm" class="add-task-row">
+      <input type="text" id="taskInput" placeholder="أضف مهمة جديدة واضغط Enter…" maxlength="140" required>
+      <select id="taskPriority" title="الأولوية">
+        <option value="high">🔴 عالية</option>
+        <option value="medium" selected>🟡 متوسطة</option>
+        <option value="low">🟢 منخفضة</option>
+      </select>
+      <button type="submit" class="add-btn">إضافة</button>
+    </form>
+
+    <ul class="task-list" id="taskList"></ul>
+    <p class="empty-msg" id="tasksEmpty">لا مهام بعد — أضف مهمتك الأولى بالأعلى! ✨</p>
+  </section>
+
+  <section class="box notes-card">
+    <div class="card-head">
+      <h2>الملاحظات اللاصقة</h2>
+      <span class="hint">كل ملاحظة تبقى ٧ أيام ثم تختفي تلقائياً</span>
+    </div>
+    <div class="notes-grid" id="notesGrid">
+      <button class="note add-note" id="addNoteTile" type="button" title="أضف ملاحظة جديدة">
+        <span class="plus">+</span>
+        <span>ملاحظة جديدة</span>
+      </button>
+    </div>
+    <p class="empty-msg hidden" id="notesEmptyHint"></p>
+  </section>
+
+  </div>
+
+  <div class="tab-panel" id="panel-team">
+    <section class="box team-box">
+      <div class="card-head">
+        <h2>متابعة مهام الفريق</h2>
+        <span class="hint" id="teamStatus">جارٍ تحميل المهام…</span>
+      </div>
+      <div class="refs">
+        <b>مراجع</b>
+        <a href="https://www.robogeex.com/odoo/action-469" target="_blank" rel="noopener">Odoo Project</a>
+        <a href="https://docs.google.com/spreadsheets/d/1vwyVNssXRv9qkyr4-oxSxq-Lwpf6xUuUGp1vSsO6jZo/edit?gid=174213715#gid=174213715" target="_blank" rel="noopener">Task Log</a>
+        <a href="https://app.diagrams.net/" target="_blank" rel="noopener">Diagram</a>
+      </div>
+    </section>
+
+    <section class="box team-sup">
+      <button class="team-plus" type="button" data-i="0" title="إضافة مهمة">+</button>
+      <div class="nm">
+        <small>اسم المشرف</small>
+        <strong id="team-n-0">—</strong>
+        <div class="stat" id="team-s-0"></div>
+        <div id="team-l-0"></div>
+      </div>
+    </section>
+
+    <section class="team-cols" id="teamCols"></section>
+  </div>
+
+  <footer>مساحتك الرقمية الخاصة — تُحفظ بياناتك محلياً على هذا الجهاز فقط 🔒</footer>
 </div>
 
-<dialog id="dlg">
-<form id="f" method="dialog">
-<h2 id="dt">مهمة جديدة</h2>
-<label>الوصف<textarea id="desc" rows="2" required></textarea></label>
-<div class="row"><label>التاريخ<input type="date" id="date" required></label>
-<label>الحالة<select id="st"><option>تم</option><option>جزئي</option><option>لم يكتمل</option></select></label></div>
-<div class="row"><label>وقت البداية<input type="time" id="t1" value="09:00" required></label>
-<label>وقت النهاية<input type="time" id="t2" value="16:00" required></label></div>
-<div class="row"><label>نوع المهمة<select id="ty"></select></label>
-<label>المشروع<select id="pr"></select></label></div>
-<label>ملاحظات<input id="nt"></label>
-<div id="err"></div>
-<div class="act"><button type="button" id="cancel">إلغاء</button><button class="go" id="go">إضافة للشيت</button></div>
-</form>
+<dialog id="teamDlg">
+  <form id="teamForm">
+    <h3 id="teamDialogTitle">مهمة جديدة</h3>
+    <p class="field-label">الوصف</p>
+    <textarea id="teamDesc" rows="2" required></textarea>
+    <div class="row-2">
+      <div>
+        <p class="field-label">التاريخ</p>
+        <input type="date" id="teamDate" required>
+      </div>
+      <div>
+        <p class="field-label">الحالة</p>
+        <select id="teamSt">
+          <option>تم</option>
+          <option>جزئي</option>
+          <option>لم يكتمل</option>
+        </select>
+      </div>
+    </div>
+    <div class="row-2">
+      <div>
+        <p class="field-label">وقت البداية</p>
+        <input type="time" id="teamT1" value="09:00" required>
+      </div>
+      <div>
+        <p class="field-label">وقت النهاية</p>
+        <input type="time" id="teamT2" value="16:00" required>
+      </div>
+    </div>
+    <div class="row-2">
+      <div>
+        <p class="field-label">نوع المهمة</p>
+        <select id="teamTy"></select>
+      </div>
+      <div>
+        <p class="field-label">المشروع</p>
+        <select id="teamPr"></select>
+      </div>
+    </div>
+    <p class="field-label">ملاحظات</p>
+    <input type="text" id="teamNt">
+    <div id="teamErr" class="team-err"></div>
+    <div class="actions">
+      <button type="button" id="teamCancel">إلغاء</button>
+      <button type="submit" class="primary" id="teamGo">إضافة للشيت</button>
+    </div>
+  </form>
 </dialog>
 
+<dialog id="noteDialog">
+  <form id="noteForm">
+    <h3 id="noteDialogTitle">ملاحظة جديدة</h3>
+    <textarea id="noteText" rows="4" maxlength="400" placeholder="اكتب ملاحظتك هنا…" required></textarea>
+    <p class="field-label">اختر لوناً</p>
+    <div class="swatches" id="noteSwatches"></div>
+    <div class="actions">
+      <button type="button" id="noteCancel">إلغاء</button>
+      <button type="submit" class="primary" id="noteSave">حفظ</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="taskEditDialog">
+  <form id="taskEditForm">
+    <h3>تعديل المهمة</h3>
+    <label class="field-label">العنوان</label>
+    <input type="text" id="editTaskInput" maxlength="140" required>
+    <label class="field-label">الأولوية</label>
+    <select id="editTaskPriority">
+      <option value="high">🔴 عالية</option>
+      <option value="medium">🟡 متوسطة</option>
+      <option value="low">🟢 منخفضة</option>
+    </select>
+    <div class="actions">
+      <button type="button" id="editTaskCancel">إلغاء</button>
+      <button type="submit" class="primary">حفظ</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="tabs.js"></script>
+<script src="quotes.js"></script>
 <script src="app.js"></script>
-<script src="sticky.js"></script>
+<script src="notes.js"></script>
+<script src="team.js"></script>
 </body>
 </html>

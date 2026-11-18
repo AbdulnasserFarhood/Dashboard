@@ -1,0 +1,84 @@
+/* =========================================================
+   مساحتي — Sticky notes board
+   ========================================================= */
+.notes-card{position:relative}
+
+.notes-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(var(--note-min,190px),1fr));
+  gap:14px;
+  align-items:start;
+}
+
+/* density tiers — auto-shrink as notes accumulate */
+.notes-grid.density-1{--note-min:220px}
+.notes-grid.density-2{--note-min:190px}
+.notes-grid.density-3{--note-min:160px}
+.notes-grid.density-4{--note-min:135px}
+
+.note{
+  position:relative;
+  border-radius:var(--radius-md);
+  padding:14px 14px 34px;
+  min-height:120px;
+  background:var(--note-yellow,#fff3b0);
+  color:#2b2608;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  transform:rotate(var(--rot,0deg));
+  transition:transform .15s ease,box-shadow .2s ease;
+  cursor:grab;
+  user-select:none;
+  touch-action:none;
+  display:flex;
+  flex-direction:column;
+}
+.density-1 .note{min-height:150px;padding:18px 18px 38px}
+.density-3 .note{min-height:105px;padding:11px 11px 30px;font-size:13px}
+.density-4 .note{min-height:95px;padding:9px 9px 28px;font-size:12px}
+
+.note:hover{box-shadow:0 12px 24px rgba(0,0,0,.16)}
+.note.dragging{position:fixed;z-index:60;cursor:grabbing;box-shadow:0 18px 30px rgba(0,0,0,.3);transform:rotate(3deg) scale(1.04)!important;transition:none}
+.note-ph{border:1.5px dashed var(--line);border-radius:var(--radius-md);min-height:120px}
+
+.note-text{flex:1;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0 0 8px}
+.density-3 .note-text,.density-4 .note-text{font-size:12.5px;-webkit-line-clamp:5;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+
+.note-meta{display:flex;align-items:center;justify-content:space-between;font-size:11px;opacity:.75;gap:6px}
+.note-time{white-space:nowrap}
+
+.note-tools{position:absolute;top:6px;left:6px;display:flex;gap:2px;opacity:0;transition:opacity .15s ease}
+.note:hover .note-tools,.note:focus-within .note-tools{opacity:1}
+.note-tools button{
+  width:24px;height:24px;border:0;border-radius:7px;background:rgba(0,0,0,.08);color:inherit;cursor:pointer;
+  font-size:12px;display:flex;align-items:center;justify-content:center;
+}
+.note-tools button:hover{background:rgba(0,0,0,.18)}
+.note.pinned{box-shadow:0 0 0 2px var(--primary),0 10px 20px rgba(0,0,0,.15)}
+.note-tools button.pin.on{background:rgba(0,0,0,.25)}
+
+/* colors — soft pastel, each with readable dark ink */
+.note.c-yellow{background:var(--note-yellow)}
+.note.c-pink{background:var(--note-pink);color:#3a1326}
+.note.c-green{background:var(--note-green);color:#123a22}
+.note.c-blue{background:var(--note-blue);color:#102b44}
+.note.c-peach{background:var(--note-peach);color:#3a2206}
+
+html[data-theme="dark"] .note{color:#1b1b1b}
+
+/* add-note tile */
+.add-note{
+  border:1.6px dashed var(--line);background:transparent;color:var(--mute);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  min-height:120px;font:inherit;font-size:13px;cursor:pointer;transform:none;box-shadow:none;
+  transition:border-color .2s ease,color .2s ease,background .2s ease;
+}
+.add-note:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.add-note .plus{font-size:26px;line-height:1}
+
+/* color swatches inside dialog */
+.swatches{display:flex;gap:10px;margin-top:4px}
+.swatch{
+  width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.swatch.on{border-color:var(--ink);transform:scale(1.15)}
