@@ -31,3 +31,34 @@
 .team-plus:hover{border-color:var(--primary);color:var(--primary)}
 .team-msg{text-align:center;color:var(--mute);font-size:12.5px;padding:8px}
 .team-err{color:var(--high);font-size:13px;margin-top:8px;min-height:18px}
+
+/* ===== مؤقت المهمة ===== */
+.timer-start-row{margin-top:10px;text-align:center}
+.timer-start-btn{
+  width:100%;padding:10px;border-radius:var(--radius-sm);border:1.5px dashed var(--accent);
+  background:transparent;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;transition:background .2s ease,color .2s ease;
+}
+.timer-start-btn:hover{background:var(--accent);color:#06281f}
+.timer-hint{font-size:11.5px;color:var(--mute);margin:6px 0 0}
+
+.timer-card{
+  border:1.5px solid var(--accent);border-radius:12px;padding:10px 12px;margin:6px 0 8px;
+  background:color-mix(in srgb,var(--accent) 10%,var(--card));text-align:center;
+}
+.timer-card.paused{border-color:var(--medium);background:color-mix(in srgb,var(--medium) 10%,var(--card))}
+.timer-desc{font-size:13px;font-weight:700;word-break:break-word}
+.timer-clock{font-size:28px;font-weight:900;letter-spacing:1px;margin:4px 0;font-variant-numeric:tabular-nums;direction:ltr}
+.timer-card:not(.paused) .timer-clock{color:var(--accent)}
+.timer-card.paused .timer-clock{color:var(--medium)}
+.timer-sub{font-size:11.5px;color:var(--mute);margin-bottom:8px}
+.timer-card:not(.paused) .timer-sub::first-letter{animation:timerBlink 1.2s ease-in-out infinite}
+@keyframes timerBlink{50%{opacity:.25}}
+.timer-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.timer-actions button,.timer-actions select{
+  border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;
+  padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer;
+}
+.timer-actions .finish{background:var(--primary);border-color:var(--primary);color:var(--primary-ink);font-weight:700}
+.timer-actions .cancel{color:var(--high)}
+.timer-actions button:disabled,.timer-actions select:disabled{opacity:.55;cursor:wait}
+.timer-err{color:var(--high);font-size:12px;margin-top:6px;min-height:0}
