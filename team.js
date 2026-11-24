@@ -1,13 +1,12 @@
 /* =========================================================
    متابعة الفريق — يقرأ ويكتب إلى نفس Google Sheet القديم
-   (منقول كما هو من النسخة السابقة من الموقع دون تغيير في المنطق)
+   (يعرض كل المهام، الأحدث أولاً، مع تحديث تلقائي كل دقيقة)
    ========================================================= */
 (function () {
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_ZKgt4NKJWqdlDRGJjCoJ7hg1myc2aVlgPW30GNjzIsAQgTyNMYpxihnaLB32_ZTA/exec';
-  const KEYWORD = 'fusion';            // المهام التي يحتوي وصفها هذه الكلمة تظهر هنا
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -45,31 +44,56 @@
   $("teamPr").innerHTML = PROJECTS.map((t) => `<option ${t === DEFAULT_PROJECT ? 'selected' : ''}>${esc(t)}</option>`).join("");
 
   /* ----- عرض مهام كل شخص ----- */
+  // كل شخص: أحدث المهام أولاً. الإحصائية للشهر الحالي، والقائمة تعرض آخر SHOW_N مهام مع زر "عرض المزيد"
+  const SHOW_N = 10;
+  const expanded = new Set();
+  const thisMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7); // "2026-11"
+
   function render() {
     PEOPLE.forEach((p, i) => {
-      const mine = rows.filter((r) => r.name.toLowerCase().includes(p.k)).sort((a, b) => b.date.localeCompare(a.date));
-      const hours = mine.reduce((a, r) => a + (parseFloat(r.hours) || 0), 0);
+      const mine = rows
+        .filter((r) => String(r.name || '').toLowerCase().includes(p.k))
+        // الأحدث تاريخاً أولاً؛ وفي نفس اليوم الصف المضاف لاحقاً في الشيت أولاً
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)) || b._i - a._i);
+      const month = mine.filter((r) => String(r.date).startsWith(thisMonth()));
+      const hours = month.reduce((a, r) => a + (parseFloat(r.hours) || 0), 0);
       const statEl = $("team-s-" + i);
       const listEl = $("team-l-" + i);
-      if (statEl) statEl.textContent = `${mine.length} مهام · ${hours.toFixed(2)} ساعة`;
+      if (statEl) statEl.textContent = `هذا الشهر: ${month.length} مهام · ${hours.toFixed(2)} ساعة`;
       if (listEl) {
-        listEl.innerHTML = mine.map((r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span></div></div>`).join('') || '<div class="team-msg">لا مهام بعد</div>';
+        const shown = expanded.has(i) ? mine : mine.slice(0, SHOW_N);
+        listEl.innerHTML = (shown.map((r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span></div></div>`).join('') || '<div class="team-msg">لا مهام بعد</div>')
+          + (mine.length > SHOW_N ? `<button type="button" class="team-more" data-more="${i}">${expanded.has(i) ? 'عرض أقل' : `عرض الكل (${mine.length})`}</button>` : '');
       }
     });
   }
 
-  /* ----- تحميل البيانات من الشيت ----- */
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-more]');
+    if (!b) return;
+    const i = +b.dataset.more;
+    expanded.has(i) ? expanded.delete(i) : expanded.add(i);
+    render();
+  });
+
+  /* ----- تحميل البيانات من الشيت (بدون كاش، وتحديث تلقائي) ----- */
+  let loading = false;
   async function load() {
     if (SCRIPT_URL.startsWith('PASTE')) { status.textContent = 'ضع رابط الـ Web App في SCRIPT_URL'; return; }
+    if (loading) return;
+    loading = true;
     try {
-      const j = await (await fetch(SCRIPT_URL)).json();
-      rows = j.rows.filter((r) => r.desc.toLowerCase().includes(KEYWORD));
-      status.textContent = '';
+      const j = await (await fetch(SCRIPT_URL + '?t=' + Date.now(), { cache: 'no-store' })).json();
+      rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
+      status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
       render();
     } catch (e) {
       status.textContent = 'تعذّر تحميل البيانات من الشيت';
     }
+    loading = false;
   }
+  setInterval(() => { if (!document.hidden) load(); }, 60 * 1000); // كل دقيقة
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); }); // عند الرجوع للصفحة
 
   /* ----- فتح نافذة إضافة مهمة ----- */
   document.addEventListener('click', (e) => {
@@ -85,10 +109,6 @@
   });
 
   $("teamCancel").addEventListener('click', () => $("teamDlg").close());
-
-  function withKeyword(desc) {
-    return desc.toLowerCase().includes(KEYWORD) ? desc : 'Fusion 360 | ' + desc;
-  }
 
   /* يرسل صفاً واحداً للشيت. يرجّع null عند النجاح، أو نص الخطأ */
   async function postTask(payload) {
@@ -106,7 +126,7 @@
     $("teamGo").disabled = true;
     $("teamErr").textContent = '';
     const err = await postTask({
-      name: PEOPLE[cur].n, desc: withKeyword($("teamDesc").value.trim()), date: $("teamDate").value,
+      name: PEOPLE[cur].n, desc: $("teamDesc").value.trim(), date: $("teamDate").value,
       start: $("teamT1").value, end: $("teamT2").value,
       status: $("teamSt").value, type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value,
     });
@@ -166,7 +186,7 @@
     }
     timers.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      person: cur, desc: withKeyword(desc),
+      person: cur, desc,
       type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value,
       startedAt: Date.now(), pausedTotal: 0, pausedAt: null,
     });

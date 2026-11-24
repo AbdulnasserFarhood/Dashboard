@@ -62,3 +62,5 @@
 .timer-actions .cancel{color:var(--high)}
 .timer-actions button:disabled,.timer-actions select:disabled{opacity:.55;cursor:wait}
 .timer-err{color:var(--high);font-size:12px;margin-top:6px;min-height:0}
+.team-more{display:block;margin:8px auto 0;border:1px dashed var(--line);background:transparent;color:var(--primary);border-radius:8px;padding:5px 12px;font:inherit;font-size:12px;cursor:pointer}
+.team-more:hover{border-color:var(--primary)}
