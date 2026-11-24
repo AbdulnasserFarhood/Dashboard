@@ -101,3 +101,4 @@
 .team-more:hover{color:#E95F4F;border-color:#E95F4F}
 .team-more .chev{display:inline-block;font-size:14px;transition:transform .3s ease}
 .team-more.open .chev{transform:rotate(180deg)}
+.team-task .tm{color:var(--accent);font-weight:700}

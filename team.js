@@ -61,7 +61,7 @@
       const listEl = $("team-l-" + i);
       if (statEl) statEl.textContent = `هذا الشهر: ${month.length} مهام · ${hours.toFixed(2)} ساعة`;
       if (listEl) {
-        const card = (r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span></div></div>`;
+        const card = (r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span>${r.timer ? `<span class="tm" title="المدة الفعلية من المؤقت">⏱ ${esc(r.timer)}</span>` : ''}</div></div>`;
         const rest = mine.slice(SHOW_N);
         const open = expanded.has(i);
         listEl.innerHTML = (mine.slice(0, SHOW_N).map(card).join('') || '<div class="team-msg">لا مهام بعد</div>')
@@ -99,11 +99,15 @@
     loading = true;
     try {
       const j = await (await fetch(SCRIPT_URL + '?t=' + Date.now(), { cache: 'no-store' })).json();
+      if (j.error) throw new Error('الشيت ردّ بخطأ: ' + j.error);
       rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
-      status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
+      status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + ' · ' + rows.length + ' مهمة';
       render();
     } catch (e) {
-      status.textContent = 'تعذّر تحميل البيانات من الشيت';
+      // رسالة واضحة بدل "تعذّر التحميل" فقط، حتى يُعرف السبب
+      status.textContent = e.message.startsWith('الشيت')
+        ? e.message
+        : 'تعذّر الوصول للشيت — تأكد أن النشر على «Anyone» وأن رابط SCRIPT_URL هو رابط النشر الحالي';
     }
     loading = false;
   }
@@ -243,6 +247,7 @@
       const err = await postTask({
         name: PEOPLE[t.person].n, desc: t.desc, date: start.toLocaleDateString('en-CA'),
         start: hhmm(start), end: hhmm(end),
+        timer: fmtElapsed(worked), // المدة الفعلية بالثانية، تُكتب في عمود «مدة المؤقت» إن وُجد
         status: card.querySelector('[data-role="status"]').value,
         type: t.type, project: t.project, notes: t.notes,
       });
