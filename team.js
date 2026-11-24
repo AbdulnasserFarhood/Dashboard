@@ -45,7 +45,7 @@
 
   /* ----- عرض مهام كل شخص ----- */
   // كل شخص: أحدث المهام أولاً. الإحصائية للشهر الحالي، والقائمة تعرض آخر SHOW_N مهام مع زر "عرض المزيد"
-  const SHOW_N = 10;
+  const SHOW_N = 2;
   const expanded = new Set();
   const thisMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7); // "2026-11"
 
@@ -61,19 +61,34 @@
       const listEl = $("team-l-" + i);
       if (statEl) statEl.textContent = `هذا الشهر: ${month.length} مهام · ${hours.toFixed(2)} ساعة`;
       if (listEl) {
-        const shown = expanded.has(i) ? mine : mine.slice(0, SHOW_N);
-        listEl.innerHTML = (shown.map((r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span></div></div>`).join('') || '<div class="team-msg">لا مهام بعد</div>')
-          + (mine.length > SHOW_N ? `<button type="button" class="team-more" data-more="${i}">${expanded.has(i) ? 'عرض أقل' : `عرض الكل (${mine.length})`}</button>` : '');
+        const card = (r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span></div></div>`;
+        const rest = mine.slice(SHOW_N);
+        const open = expanded.has(i);
+        listEl.innerHTML = (mine.slice(0, SHOW_N).map(card).join('') || '<div class="team-msg">لا مهام بعد</div>')
+          + (rest.length ? `
+            <div class="team-extra${open ? ' open' : ''}" id="team-x-${i}"><div class="team-extra-inner">${rest.map(card).join('')}</div></div>
+            <button type="button" class="team-more${open ? ' open' : ''}" data-more="${i}" aria-expanded="${open}">
+              <span class="lbl">${moreLabel(open, mine.length)}</span><span class="chev">▾</span>
+            </button>` : '');
       }
     });
   }
 
+  function moreLabel(open, total) {
+    return open ? 'إخفاء المهام' : `عرض كل المهام (${total})`;
+  }
+
+  // فتح/إغلاق القائمة بدون إعادة رسم، حتى تظهر حركة الانزلاق
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-more]');
     if (!b) return;
     const i = +b.dataset.more;
-    expanded.has(i) ? expanded.delete(i) : expanded.add(i);
-    render();
+    const open = !expanded.has(i);
+    open ? expanded.add(i) : expanded.delete(i);
+    $("team-x-" + i).classList.toggle('open', open);
+    b.classList.toggle('open', open);
+    b.setAttribute('aria-expanded', open);
+    b.querySelector('.lbl').textContent = moreLabel(open, $("team-x-" + i).querySelectorAll('.team-task').length + SHOW_N);
   });
 
   /* ----- تحميل البيانات من الشيت (بدون كاش، وتحديث تلقائي) ----- */
@@ -105,7 +120,11 @@
     $("teamErr").textContent = '';
     $("teamDesc").value = '';
     $("teamNt").value = '';
-    $("teamDlg").showModal();
+    // حركة "نبضة" على زر + ثم تُفتح النافذة بعدها مباشرة
+    b.classList.remove('pop');
+    void b.offsetWidth;
+    b.classList.add('pop');
+    setTimeout(() => { $("teamDlg").showModal(); $("teamDesc").focus(); }, 220);
   });
 
   $("teamCancel").addEventListener('click', () => $("teamDlg").close());

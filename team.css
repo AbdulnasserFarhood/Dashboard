@@ -24,11 +24,32 @@
 .team-task .ok{color:var(--low)}
 .team-task .pt{color:var(--medium)}
 
+/* زر + بلون روبوغيكس الأحمر وإشارة بيضاء */
 .team-plus{
-  width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--ink);
-  font-size:17px;cursor:pointer;line-height:1;flex-shrink:0;transition:border-color .2s ease,color .2s ease;
+  --rg-red:#E95F4F;
+  position:relative;width:32px;height:32px;border-radius:10px;border:0;flex-shrink:0;
+  background:var(--rg-red);color:#fff;font-size:21px;font-weight:700;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 10px rgba(233,95,79,.35);
+  transition:transform .2s ease,box-shadow .2s ease,background .2s ease;
 }
-.team-plus:hover{border-color:var(--primary);color:var(--primary)}
+.team-plus:hover{transform:translateY(-2px) scale(1.07);box-shadow:0 8px 18px rgba(233,95,79,.45);background:#e14c3b}
+.team-plus:active{transform:scale(.9)}
+.team-plus:focus-visible{outline:2px solid var(--rg-red);outline-offset:2px}
+/* نبضة عند الكبس: الإشارة تلف والزر ينضغط ثم يرجع، ودائرة تنتشر حوله */
+.team-plus.pop{animation:plusPop .45s cubic-bezier(.3,1.6,.5,1)}
+.team-plus.pop::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid var(--rg-red);
+  animation:plusRing .5s ease-out forwards;pointer-events:none;
+}
+@keyframes plusPop{0%{transform:scale(1) rotate(0)}35%{transform:scale(.82) rotate(45deg)}100%{transform:scale(1) rotate(90deg)}}
+@keyframes plusRing{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(1.9)}}
+
+/* نافذة إضافة المهمة تظهر بحركة */
+#teamDlg[open]{animation:dlgIn .28s cubic-bezier(.2,.9,.3,1.15)}
+#teamDlg[open]::backdrop{animation:dlgFade .25s ease}
+@keyframes dlgIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes dlgFade{from{opacity:0}to{opacity:1}}
 .team-msg{text-align:center;color:var(--mute);font-size:12.5px;padding:8px}
 .team-err{color:var(--high);font-size:13px;margin-top:8px;min-height:18px}
 
@@ -62,5 +83,21 @@
 .timer-actions .cancel{color:var(--high)}
 .timer-actions button:disabled,.timer-actions select:disabled{opacity:.55;cursor:wait}
 .timer-err{color:var(--high);font-size:12px;margin-top:6px;min-height:0}
-.team-more{display:block;margin:8px auto 0;border:1px dashed var(--line);background:transparent;color:var(--primary);border-radius:8px;padding:5px 12px;font:inherit;font-size:12px;cursor:pointer}
-.team-more:hover{border-color:var(--primary)}
+/* القائمة المنسدلة لباقي المهام */
+.team-extra{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.team-extra.open{grid-template-rows:1fr}
+.team-extra-inner{overflow:hidden;min-height:0}
+.team-extra.open .team-task{animation:taskDrop .3s ease both}
+.team-extra.open .team-task:nth-child(2){animation-delay:.04s}
+.team-extra.open .team-task:nth-child(3){animation-delay:.08s}
+.team-extra.open .team-task:nth-child(n+4){animation-delay:.12s}
+@keyframes taskDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+.team-more{
+  display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:8px;
+  border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:10px;
+  padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;transition:color .2s ease,border-color .2s ease;
+}
+.team-more:hover{color:#E95F4F;border-color:#E95F4F}
+.team-more .chev{display:inline-block;font-size:14px;transition:transform .3s ease}
+.team-more.open .chev{transform:rotate(180deg)}
