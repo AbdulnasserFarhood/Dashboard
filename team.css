@@ -6,10 +6,12 @@
 .team-box .refs a{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--primary);color:var(--primary);text-decoration:none}
 .team-box .refs a:hover{background:var(--primary);color:var(--primary-ink)}
 
-.team-sup{display:flex;align-items:flex-start;gap:12px;padding:16px 18px}
-.team-sup .nm{flex:1}
-.team-sup small{display:block;color:var(--mute);font-size:12.5px;text-align:center}
-.team-sup strong{display:block;font-size:19px;margin:2px 0;text-align:center}
+/* المشرف: نفس إطار الأعضاء — الاسم بالوسط و + على اليسار */
+.team-sup{padding:12px}
+.team-sup .ch{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.team-sup .sup-name{flex:1;text-align:center}
+.team-sup small{display:block;color:var(--mute);font-size:12px}
+.team-sup strong{display:block;font-size:18px;margin-top:1px}
 .team-sup .stat{font-size:12px;color:var(--mute);text-align:center;margin-bottom:8px}
 
 .team-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -118,3 +120,47 @@
 .timer-actions .resume{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .timer-actions .pause{font-weight:700}
 .timer-note{font-size:11.5px;color:var(--mute);text-align:center;margin:-2px 0 8px}
+
+/* =========================================================
+   بطاقات مهام الشهر
+   ========================================================= */
+#panel-team{position:relative}
+.team-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media (max-width:900px){.team-stats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.team-stats{grid-template-columns:1fr}}
+
+/* الشاشات العريضة: المحتوى ينزاح يميناً والبطاقات عمود على اليسار */
+@media (min-width:1240px){
+  body.team-view .app{margin-left:auto;margin-right:calc((100% - 1170px) / 2)}
+  body.team-view .team-stats{
+    position:absolute;top:0;right:calc(100% + 24px);width:252px;
+    grid-template-columns:1fr;gap:20px;
+  }
+}
+
+.stat-wrap{position:relative;opacity:0}
+/* التوهّج خلف البطاقة: تدرّج تركوازي ← برتقالي */
+.stat-wrap::before{
+  content:'';position:absolute;inset:12px 16px 4px;border-radius:20px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  filter:blur(22px);opacity:.32;transition:opacity .3s ease;
+}
+.stat-wrap:nth-child(even)::before{background:linear-gradient(135deg,var(--accent),var(--primary))}
+.stat-wrap:hover::before{opacity:.55}
+.stat-card{
+  position:relative;display:flex;align-items:center;gap:14px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px 18px;
+}
+.sc-avatar{
+  width:46px;height:46px;flex-shrink:0;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-weight:900;font-size:20px;
+}
+.sc-body{min-width:0}
+.sc-name{font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-line{font-size:12.5px;color:var(--mute);margin-top:2px}
+.sc-num{font-size:28px;font-weight:900;color:var(--primary);font-variant-numeric:tabular-nums;margin-left:4px;vertical-align:-3px}
+
+/* الظهور بالتتابع، منزلقة من حافة المحتوى */
+.team-stats.play .stat-wrap{animation:statIn .65s cubic-bezier(.2,.9,.3,1.12) both;animation-delay:calc(var(--d) * .35s)}
+@keyframes statIn{from{opacity:0;transform:translateX(70px) scale(.94)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.team-stats.play .stat-wrap{animation:none;opacity:1}}

@@ -111,6 +111,8 @@
   </div>
 
   <div class="tab-panel" id="panel-team">
+    <aside class="team-stats" id="teamStats" aria-label="مهام هذا الشهر لكل عضو"></aside>
+
     <section class="box team-box">
       <div class="card-head">
         <h2>متابعة مهام الفريق</h2>
@@ -125,14 +127,13 @@
     </section>
 
     <section class="box team-sup">
-      <button class="team-plus" type="button" data-i="0" title="إضافة مهمة">+</button>
-      <div class="nm">
-        <small>اسم المشرف</small>
-        <strong id="team-n-0">—</strong>
-        <div class="stat" id="team-s-0"></div>
-        <div id="team-t-0"></div>
-        <div id="team-l-0"></div>
+      <div class="ch sup-ch">
+        <div class="sup-name"><small>اسم المشرف</small><strong id="team-n-0">—</strong></div>
+        <button class="team-plus" type="button" data-i="0" title="إضافة مهمة">+</button>
       </div>
+      <div class="stat" id="team-s-0"></div>
+      <div id="team-t-0"></div>
+      <div id="team-l-0"></div>
     </section>
 
     <section class="team-cols" id="teamCols"></section>

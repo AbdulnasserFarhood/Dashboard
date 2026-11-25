@@ -12,6 +12,8 @@
     nav.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + tab));
     try { localStorage.setItem(STORE_KEY, tab); } catch (e) {}
+    document.body.classList.toggle("team-view", tab === "team"); // تخطيط الفريق: المحتوى يمين والبطاقات يسار
+    document.dispatchEvent(new CustomEvent("tab-change", { detail: tab }));
   }
 
   nav.addEventListener("click", (e) => {

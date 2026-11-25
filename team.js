@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqmOqz8l3OikVOOmhFNkRSSEq6vlhmxQX1wNS5uaCD1Fq9Bzn5uPTT4qotRtcw_0uT/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -72,7 +72,70 @@
             </button>` : '');
       }
     });
+    renderStats();
   }
+
+  /* =========================================================
+     بطاقات مهام الشهر (يسار الصفحة): تظهر بالتتابع، والعدد يتصاعد من 0
+     ========================================================= */
+  const statsBox = $("teamStats");
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let loaded = false;
+
+  function monthCount(p) {
+    return rows.filter((r) => String(r.name || '').toLowerCase().includes(p.k) && String(r.date).startsWith(thisMonth())).length;
+  }
+  function countUp(el, from, to, dur = 1000) {
+    cancelAnimationFrame(el._raf);
+    if (reduceMotion) { el.textContent = to; return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) el._raf = requestAnimationFrame(step);
+    };
+    el._raf = requestAnimationFrame(step);
+  }
+  function teamTabActive() { return $("panel-team").classList.contains('active'); }
+
+  function renderStats() {
+    if (!statsBox) return;
+    if (!statsBox.children.length) {
+      statsBox.innerHTML = PEOPLE.map((p, i) => `
+        <div class="stat-wrap" style="--d:${i}">
+          <div class="stat-card">
+            <div class="sc-avatar">${esc(p.n.trim().charAt(0).toUpperCase())}</div>
+            <div class="sc-body">
+              <div class="sc-name">${esc(p.n)}</div>
+              <div class="sc-line"><span class="sc-num" data-i="${i}">0</span> مهمة خلال هذا الشهر</div>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+    statsBox.querySelectorAll('.sc-num').forEach((el) => {
+      const target = monthCount(PEOPLE[+el.dataset.i]);
+      const old = el.dataset.target;
+      el.dataset.target = target;
+      // بعد العرض الأول: عند التحديث التلقائي يتحرك الرقم من قيمته الحالية للجديدة فقط
+      if (statsBox.classList.contains('play') && old !== undefined && +old !== target && !el._t) countUp(el, +el.textContent || 0, target, 600);
+    });
+  }
+
+  function playStats() {
+    if (!statsBox || !loaded) return;
+    statsBox.classList.remove('play');
+    void statsBox.offsetWidth; // لإعادة تشغيل حركة الظهور
+    statsBox.classList.add('play');
+    statsBox.querySelectorAll('.sc-num').forEach((el, i) => {
+      cancelAnimationFrame(el._raf);
+      clearTimeout(el._t);
+      el.textContent = '0';
+      // يبدأ العدّ لحظة ظهور البطاقة نفسها
+      el._t = setTimeout(() => { el._t = null; countUp(el, 0, +el.dataset.target); }, reduceMotion ? 0 : i * 350 + 250);
+    });
+  }
+
+  document.addEventListener('tab-change', (e) => { if (e.detail === 'team') playStats(); });
 
   function moreLabel(open, total) {
     return open ? 'إخفاء المهام' : `عرض كل المهام (${total})`;
@@ -104,6 +167,7 @@
       rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
       status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + ' · ' + rows.length + ' مهمة';
       render();
+      if (!loaded) { loaded = true; if (teamTabActive()) playStats(); }
     } catch (e) {
       // رسالة واضحة بدل "تعذّر التحميل" فقط، حتى يُعرف السبب
       status.textContent = e.message.startsWith('الشيت')
