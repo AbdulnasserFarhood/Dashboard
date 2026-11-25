@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqmOqz8l3OikVOOmhFNkRSSEq6vlhmxQX1wNS5uaCD1Fq9Bzn5uPTT4qotRtcw_0uT/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -180,39 +180,66 @@
     return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map(pad).join(':');
   }
 
-  function renderTimers() {
-    PEOPLE.forEach((p, i) => {
-      const box = $("team-t-" + i);
-      if (!box) return;
-      const t = timers.find((x) => x.person === i);
-      if (!t) { box.innerHTML = ''; return; }
-      box.innerHTML = `<div class="timer-card${t.pausedAt ? ' paused' : ''}" data-id="${t.id}">
+  /* إيقاف مؤقت / استئناف — الوقت المتوقف لا يُحتسب من مدة العمل */
+  function pauseTimer(t, now = Date.now()) {
+    if (!t.pausedAt) t.pausedAt = now;
+  }
+  function resumeTimer(t, now = Date.now()) {
+    // مؤقت واحد فقط يعمل لكل شخص: أي مؤقت آخر شغّال له يتوقف تلقائياً
+    timers.forEach((x) => { if (x !== t && x.person === t.person) pauseTimer(x, now); });
+    if (t.pausedAt) { t.pausedTotal += now - t.pausedAt; t.pausedAt = null; }
+  }
+
+  // تصحيح بيانات قديمة: إن وُجد أكثر من مؤقت شغّال لنفس الشخص يبقى الأحدث فقط
+  PEOPLE.forEach((p, i) => {
+    const running = timers.filter((x) => x.person === i && !x.pausedAt).sort((a, b) => b.startedAt - a.startedAt);
+    running.slice(1).forEach((x) => pauseTimer(x));
+  });
+  saveTimers();
+
+  function timerCard(t) {
+    const running = !t.pausedAt;
+    const opt = (v) => `<option${(t.finalStatus || 'تم') === v ? ' selected' : ''}>${v}</option>`;
+    return `<div class="timer-card ${running ? 'running' : 'paused'}" data-id="${t.id}">
+        <span class="timer-badge">${running ? '● قيد العمل' : '⏸ متوقف مؤقتاً'}</span>
         <div class="timer-desc">${esc(t.desc)}</div>
         <div class="timer-clock" data-clock="${t.id}">${fmtElapsed(workedMs(t))}</div>
-        <div class="timer-sub">${t.pausedAt ? '⏸ متوقف مؤقتاً' : '● قيد العمل'} · بدأ ${hhmm(new Date(t.startedAt))}</div>
+        <div class="timer-sub">بدأ ${hhmm(new Date(t.startedAt))}${running ? '' : ' · أوقف ' + hhmm(new Date(t.pausedAt))}</div>
         <div class="timer-actions">
-          <button type="button" data-act="pause">${t.pausedAt ? '▶ متابعة' : '⏸ إيقاف مؤقت'}</button>
-          <select data-role="status" title="حالة المهمة عند الإنهاء"><option>تم</option><option>جزئي</option><option>لم يكتمل</option></select>
+          ${running
+            ? '<button type="button" class="pause" data-act="pause">⏸ إيقاف مؤقت</button>'
+            : '<button type="button" class="resume" data-act="resume">▶ استئناف</button>'}
+          <select data-role="status" title="حالة المهمة عند الإنهاء">${opt('تم')}${opt('جزئي')}${opt('لم يكتمل')}</select>
           <button type="button" class="finish" data-act="finish">⏹ إنهاء وإرسال</button>
           <button type="button" class="cancel" data-act="cancel" title="إلغاء المؤقت دون إرسال">✕</button>
         </div>
         <div class="timer-err"></div>
       </div>`;
+  }
+
+  function renderTimers() {
+    PEOPLE.forEach((p, i) => {
+      const box = $("team-t-" + i);
+      if (!box) return;
+      const mine = timers.filter((x) => x.person === i)
+        // الشغّال أولاً، ثم المتوقفة الأحدث توقفاً
+        .sort((a, b) => (!a.pausedAt === !b.pausedAt) ? (b.pausedAt || b.startedAt) - (a.pausedAt || a.startedAt) : (a.pausedAt ? 1 : -1));
+      const paused = mine.filter((x) => x.pausedAt).length;
+      box.innerHTML = mine.map(timerCard).join('')
+        + (paused > 1 ? `<div class="timer-note">${paused} مهام متوقفة — اضغط «استئناف» لمتابعة أي منها من حيث توقفت</div>` : '');
     });
   }
 
   $("teamStartTimer").addEventListener('click', () => {
     const desc = $("teamDesc").value.trim();
     if (!desc) { $("teamErr").textContent = 'اكتب وصف المهمة أولاً'; $("teamDesc").focus(); return; }
-    if (timers.some((x) => x.person === cur)) {
-      $("teamErr").textContent = 'يوجد مؤقت شغّال لهذا الشخص — أنهِه أولاً قبل بدء مهمة جديدة';
-      return;
-    }
+    const now = Date.now();
+    timers.forEach((x) => { if (x.person === cur) pauseTimer(x, now); }); // المهمة الحالية تتوقف مؤقتاً تلقائياً
     timers.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       person: cur, desc,
       type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value,
-      startedAt: Date.now(), pausedTotal: 0, pausedAt: null,
+      startedAt: now, pausedTotal: 0, pausedAt: null,
     });
     saveTimers();
     renderTimers();
@@ -227,10 +254,8 @@
     if (!t) return;
     const act = btn.dataset.act;
 
-    if (act === 'pause') {
-      const now = Date.now();
-      if (t.pausedAt) { t.pausedTotal += now - t.pausedAt; t.pausedAt = null; }
-      else t.pausedAt = now;
+    if (act === 'pause' || act === 'resume') {
+      act === 'pause' ? pauseTimer(t) : resumeTimer(t);
       saveTimers();
       renderTimers();
     } else if (act === 'cancel') {
@@ -248,7 +273,7 @@
       const err = await postTask({
         name: PEOPLE[t.person].n, desc: t.desc, date: start.toLocaleDateString('en-CA'),
         start: hhmm(start), end: hhmm(end),
-        timer: fmtElapsed(worked), // المدة الفعلية بالثانية، تُكتب في عمود «مدة المؤقت» إن وُجد
+        timer: fmtElapsed(workedMs(t)), // المدة الفعلية بالثانية (بدون أوقات الإيقاف)، تُكتب في عمود «مدة المؤقت»
         status: card.querySelector('[data-role="status"]').value,
         type: t.type, project: t.project, notes: t.notes,
       });
@@ -262,6 +287,13 @@
       renderTimers();
       await load();
     }
+  });
+
+  document.addEventListener('change', (e) => {
+    const sel = e.target.closest('.timer-card [data-role="status"]');
+    if (!sel) return;
+    const t = timers.find((x) => x.id === sel.closest('.timer-card').dataset.id);
+    if (t) { t.finalStatus = sel.value; saveTimers(); }
   });
 
   // تحديث العدّاد كل ثانية دون إعادة بناء البطاقة (حتى لا يضيع اختيار الحالة)

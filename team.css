@@ -102,3 +102,19 @@
 .team-more .chev{display:inline-block;font-size:14px;transition:transform .3s ease}
 .team-more.open .chev{transform:rotate(180deg)}
 .team-task .tm{color:var(--accent);font-weight:700}
+
+/* ===== حالة المؤقت: شغّال / متوقف ===== */
+.timer-card{position:relative}
+.timer-badge{
+  display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-bottom:6px;
+}
+.timer-card.running .timer-badge{background:var(--accent);color:var(--accent-ink)}
+.timer-card.running .timer-badge{animation:badgePulse 1.6s ease-in-out infinite}
+@keyframes badgePulse{50%{opacity:.6}}
+.timer-card.paused .timer-badge{background:var(--line);color:var(--mute)}
+.timer-card.paused{border-style:dashed;padding:8px 10px}
+.timer-card.paused .timer-clock{font-size:20px;color:var(--mute)}
+.timer-card:not(.paused) .timer-sub::first-letter{animation:none}
+.timer-actions .resume{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.timer-actions .pause{font-weight:700}
+.timer-note{font-size:11.5px;color:var(--mute);text-align:center;margin:-2px 0 8px}
