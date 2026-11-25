@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="team.css">
 <link rel="stylesheet" href="draw.css">
 <link rel="stylesheet" href="lock.css">
+<link rel="stylesheet" href="mascot.css">
 </head>
 <body>
 
@@ -34,6 +35,34 @@
     <div class="brand">
       <img src="logo-01.png" alt="مساحتي" class="brand-logo logo-light">
       <img src="logo-02.png" alt="مساحتي" class="brand-logo logo-dark">
+    </div>
+    <!-- مشهد الافتتاح: دفتر «مساحتي» يمشي ويغرس لافتة «خليك مُنظم» عند الدائرة -->
+    <div class="mascot-stage" aria-hidden="true">
+      <div class="walker">
+        <div class="mascot-sign">
+          <div class="sign-board"><img src="slogan.png" alt=""></div>
+          <div class="sign-stick"></div>
+        </div>
+        <svg class="mascot" viewBox="0 0 70 100" overflow="visible">
+          <g class="leg leg-a"><line x1="28" y1="78" x2="26" y2="95"/><ellipse cx="23" cy="96" rx="6" ry="3.2"/></g>
+          <g class="leg leg-b"><line x1="42" y1="78" x2="44" y2="95"/><ellipse cx="41" cy="96" rx="6" ry="3.2"/></g>
+          <g class="body">
+            <path class="arm arm-front" d="M14 52 Q-12 50 -38 62"/>
+            <circle class="hand arm-front" cx="-40" cy="62" r="3.4"/>
+            <path class="arm arm-rest" d="M14 52 Q7 58 8 66"/>
+            <circle class="hand arm-rest" cx="8" cy="66" r="3.2"/>
+            <path class="arm arm-back" d="M56 52 Q64 58 63 66"/>
+            <circle class="hand arm-back" cx="63" cy="66" r="3.2"/>
+            <rect class="pad" x="12" y="30" width="46" height="50" rx="9"/>
+            <line class="pad-line" x1="22" y1="68" x2="48" y2="68"/>
+            <line class="pad-line" x1="22" y1="73" x2="40" y2="73"/>
+            <circle class="ring" cx="23" cy="30" r="4"/><circle class="ring" cx="35" cy="30" r="4"/><circle class="ring" cx="47" cy="30" r="4"/>
+            <g class="eyes"><circle cx="27" cy="47" r="2.7"/><circle cx="43" cy="47" r="2.7"/></g>
+            <circle class="cheek" cx="21" cy="54" r="2.6"/><circle class="cheek" cx="49" cy="54" r="2.6"/>
+            <path class="smile" d="M29 55 Q35 61 41 55"/>
+          </g>
+        </svg>
+      </div>
     </div>
     <div class="topbar-actions">
       <button id="lockToggle" class="icon-btn" title="قفل المساحة برمز رقمي" aria-label="قفل المساحة برمز رقمي">🔒</button>
