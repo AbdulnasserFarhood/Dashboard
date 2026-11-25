@@ -248,3 +248,11 @@
 .fix-time input{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12px}
 .fix-err{color:var(--high);font-size:12px;margin-top:4px}
 .fix-err:empty{display:none}
+
+/* «الآن»: من يعمل على ماذا */
+.team-live{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--primary-soft);font-size:13px;display:grid;gap:5px}
+.team-live:empty{display:none}
+.live-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--low);box-shadow:0 0 0 0 var(--low);animation:liveDot 1.6s ease-out infinite}
+@keyframes liveDot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--low) 70%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+.live-paused,.live-idle{color:var(--mute);font-size:12px}

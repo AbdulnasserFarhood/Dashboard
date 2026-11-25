@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTLeiLt899JTRh06NAAG0IOLr8m0LozpV2UNYJHaOsH4u7HrVcmm5USC7izGVcDDbW/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -329,10 +329,11 @@
     try {
       const j = await (await fetch(SCRIPT_URL + '?key=' + encodeURIComponent(teamKey) + '&t=' + Date.now(), { cache: 'no-store' })).json();
       if (j.auth === false) { loading = false; showAuth(fromAuth ? j.error : ''); return; }
-      if (!j.version || j.version < 4) throw new Error('الشيت: السكربت المنشور نسخة قديمة — بـ Apps Script اعمل Deploy ← Manage deployments ← ✏️ ← New version');
+      if (!j.version || j.version < 5) throw new Error('الشيت: السكربت المنشور نسخة قديمة — بـ Apps Script اعمل Deploy ← Manage deployments ← ✏️ ← New version');
       if (j.error) throw new Error('الشيت ردّ بخطأ: ' + j.error);
       hideAuth();
       rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
+      applyTimers(j);
       // لا نعيد الرسم أثناء إدخال وقت لمهمة حتى لا يضيع ما يُكتب
       if (document.querySelector('.fix-time:not([hidden])')) { pendingRender = true; loading = false; return; }
       status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + ' · ' + rows.length + ' مهمة';
@@ -506,58 +507,90 @@
   });
 
   /* =========================================================
-     مؤقت المهمة: يبدأ عند إنشاء المهمة، ويُرسل للشيت عند الإنهاء
-     بوقت بداية حقيقي ووقت نهاية = البداية + الوقت الفعلي للعمل
-     (أوقات الإيقاف المؤقت لا تُحتسب). يُحفظ في المتصفح، فإغلاق
-     الصفحة أو تحديثها لا يوقف المؤقت.
+     ⏱ مؤقت المهمة — مشترك بين كل الأجهزة (محفوظ في ورقة «مؤقتات» بالشيت)
+     كل عملية تُرسل للشيت وتعود منه القائمة المحدّثة، والوقت بتوقيت الخادم،
+     فيكمل الشخص من أي جهاز، ويرى المشرف من يعمل على ماذا الآن.
      ========================================================= */
-  const TIMER_KEY = 'team_timers_v1';
   let timers = [];
-  try { timers = JSON.parse(localStorage.getItem(TIMER_KEY) || '[]'); } catch (e) { timers = []; }
-  const saveTimers = () => { try { localStorage.setItem(TIMER_KEY, JSON.stringify(timers)); } catch (e) {} };
+  let clockOffset = 0;   // فرق ساعة هذا الجهاز عن الخادم
+  let timerBusy = 0;     // عمليات قيد الإرسال: لا نستبدل القائمة أثناءها
+  const now = () => Date.now() + clockOffset;
+  const personOf = (t) => PEOPLE.findIndex((p) => belongs(p, t));
 
   const pad = (n) => String(n).padStart(2, '0');
   const hhmm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
-  function workedMs(t, now = Date.now()) {
-    return now - t.startedAt - t.pausedTotal - (t.pausedAt ? now - t.pausedAt : 0);
+  function workedMs(t, at = now()) {
+    return at - t.startedAt - t.pausedTotal - (t.pausedAt != null ? at - t.pausedAt : 0);
   }
   function fmtElapsed(ms) {
     const s = Math.max(0, Math.floor(ms / 1000));
     return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map(pad).join(':');
   }
-
-  /* إيقاف مؤقت / استئناف — الوقت المتوقف لا يُحتسب من مدة العمل */
-  function pauseTimer(t, now = Date.now()) {
-    if (!t.pausedAt) t.pausedAt = now;
-  }
-  function resumeTimer(t, now = Date.now()) {
-    // مؤقت واحد فقط يعمل لكل شخص: أي مؤقت آخر شغّال له يتوقف تلقائياً
-    timers.forEach((x) => { if (x !== t && x.person === t.person) pauseTimer(x, now); });
-    if (t.pausedAt) { t.pausedTotal += now - t.pausedAt; t.pausedAt = null; }
+  function fmtSince(ms) {
+    const m = Math.floor(Math.max(0, ms) / 60000);
+    if (m < 1) return 'منذ أقل من دقيقة';
+    if (m < 60) return `منذ ${m} دقيقة`;
+    return `منذ ${Math.floor(m / 60)} س و${m % 60} د`;
   }
 
-  // تصحيح بيانات قديمة: إن وُجد أكثر من مؤقت شغّال لنفس الشخص يبقى الأحدث فقط
-  PEOPLE.forEach((p, i) => {
-    const running = timers.filter((x) => x.person === i && !x.pausedAt).sort((a, b) => b.startedAt - a.startedAt);
-    running.slice(1).forEach((x) => pauseTimer(x));
-  });
-  saveTimers();
+  function setTimers(list, serverNow) {
+    if (typeof serverNow === 'number') clockOffset = serverNow - Date.now();
+    timers = (list || []).map((t) => ({ ...t, person: personOf(t) }));
+    renderTimers();
+    renderLive();
+  }
+  // تستدعيها load() بعد كل تحميل كامل
+  function applyTimers(j) {
+    if (timerBusy || !j.timers) return;
+    setTimers(j.timers, j.now);
+    migrateLocalTimers();
+  }
+
+  async function timerAct(payload) {
+    timerBusy++;
+    try {
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ ...payload, key: teamKey }) });
+      const j = await res.json();
+      if (j.auth === false) { showAuth(j.error); return j.error || 'مفتاح الفريق غير صحيح'; }
+      if (j.timers) setTimers(j.timers, j.now);
+      return j.ok ? null : (j.error || 'فشلت العملية');
+    } catch (e) {
+      return 'تعذّر الاتصال بالشيت — حاول مجدداً';
+    } finally {
+      timerBusy--;
+    }
+  }
+
+  // نقل المؤقتات القديمة المحفوظة في هذا المتصفح فقط إلى الشيت (مرة واحدة)
+  let migrated = false;
+  function migrateLocalTimers() {
+    if (migrated) return;
+    migrated = true;
+    let old = [];
+    try { old = JSON.parse(localStorage.getItem('team_timers_v1') || '[]'); } catch (e) {}
+    if (!old.length) return;
+    const list = old.filter((t) => PEOPLE[t.person]).map((t) => ({ ...t, name: PEOPLE[t.person].n }));
+    timerAct({ action: 'timer-import', timers: list }).then((err) => {
+      if (!err) try { localStorage.removeItem('team_timers_v1'); } catch (e) {}
+    });
+  }
 
   function timerCard(t) {
-    const running = !t.pausedAt;
+    const running = t.pausedAt == null;
+    const dis = t.pending ? ' disabled' : '';
     const opt = (v) => `<option${(t.finalStatus || 'تم') === v ? ' selected' : ''}>${v}</option>`;
-    return `<div class="timer-card ${running ? 'running' : 'paused'}" data-id="${t.id}">
-        <span class="timer-badge">${running ? '● قيد العمل' : '⏸ متوقف مؤقتاً'}</span>
+    return `<div class="timer-card ${running ? 'running' : 'paused'}" data-id="${esc(t.id)}">
+        <span class="timer-badge">${t.pending ? '… جارٍ الحفظ' : running ? '● قيد العمل' : '⏸ متوقف مؤقتاً'}</span>
         <div class="timer-desc">${esc(t.desc)}</div>
-        <div class="timer-clock" data-clock="${t.id}">${fmtElapsed(workedMs(t))}</div>
+        <div class="timer-clock" data-clock="${esc(t.id)}">${fmtElapsed(workedMs(t))}</div>
         <div class="timer-sub">بدأ ${hhmm(new Date(t.startedAt))}${running ? '' : ' · أوقف ' + hhmm(new Date(t.pausedAt))}</div>
         <div class="timer-actions">
           ${running
-            ? '<button type="button" class="pause" data-act="pause">⏸ إيقاف مؤقت</button>'
-            : '<button type="button" class="resume" data-act="resume">▶ استئناف</button>'}
-          <select data-role="status" title="حالة المهمة عند الإنهاء">${opt('تم')}${opt('جزئي')}${opt('لم يكتمل')}</select>
-          <button type="button" class="finish" data-act="finish">⏹ إنهاء وإرسال</button>
-          <button type="button" class="cancel" data-act="cancel" title="إلغاء المؤقت دون إرسال">✕</button>
+            ? `<button type="button" class="pause" data-act="pause"${dis}>⏸ إيقاف مؤقت</button>`
+            : `<button type="button" class="resume" data-act="resume"${dis}>▶ استئناف</button>`}
+          <select data-role="status" title="حالة المهمة عند الإنهاء"${dis}>${opt('تم')}${opt('جزئي')}${opt('لم يكتمل')}</select>
+          <button type="button" class="finish" data-act="finish"${dis}>⏹ إنهاء وإرسال</button>
+          <button type="button" class="cancel" data-act="cancel" title="إلغاء المؤقت دون إرسال"${dis}>✕</button>
         </div>
         <div class="timer-err"></div>
       </div>`;
@@ -569,68 +602,84 @@
       if (!box) return;
       const mine = timers.filter((x) => x.person === i)
         // الشغّال أولاً، ثم المتوقفة الأحدث توقفاً
-        .sort((a, b) => (!a.pausedAt === !b.pausedAt) ? (b.pausedAt || b.startedAt) - (a.pausedAt || a.startedAt) : (a.pausedAt ? 1 : -1));
-      const paused = mine.filter((x) => x.pausedAt).length;
+        .sort((a, b) => ((a.pausedAt == null) === (b.pausedAt == null))
+          ? (b.pausedAt || b.startedAt) - (a.pausedAt || a.startedAt)
+          : (a.pausedAt == null ? -1 : 1));
+      const paused = mine.filter((x) => x.pausedAt != null).length;
       box.innerHTML = mine.map(timerCard).join('')
         + (paused > 1 ? `<div class="timer-note">${paused} مهام متوقفة — اضغط «استئناف» لمتابعة أي منها من حيث توقفت</div>` : '');
     });
   }
 
-  $("teamStartTimer").addEventListener('click', () => {
+  /* «الآن»: من يعمل على ماذا — يراه الجميع، والمشرف خصوصاً */
+  function renderLive() {
+    const box = $("teamLive");
+    if (!box) return;
+    const running = timers.filter((t) => t.pausedAt == null);
+    const paused = timers.length - running.length;
+    if (!timers.length) { box.innerHTML = '<span class="live-idle">لا أحد يعمل على مؤقت الآن</span>'; return; }
+    box.innerHTML = running.map((t) => `<div class="live-row"><span class="live-dot"></span><b>${esc(t.name)}</b> يعمل الآن على: ${esc(t.desc)} · <span data-live="${esc(t.id)}">${fmtSince(workedMs(t))}</span></div>`).join('')
+      + (paused ? `<div class="live-paused">⏸ ${paused} ${paused === 1 ? 'مهمة متوقفة' : 'مهام متوقفة'} مؤقتاً</div>` : '');
+  }
+
+  $("teamStartTimer").addEventListener('click', async () => {
     const desc = $("teamDesc").value.trim();
     if (!desc) { $("teamErr").textContent = 'اكتب وصف المهمة أولاً'; $("teamDesc").focus(); return; }
-    const now = Date.now();
-    timers.forEach((x) => { if (x.person === cur) pauseTimer(x, now); }); // المهمة الحالية تتوقف مؤقتاً تلقائياً
-    timers.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      person: cur, desc,
-      type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value,
-      startedAt: now, pausedTotal: 0, pausedAt: null,
-    });
-    saveTimers();
-    renderTimers();
+    const payload = { action: 'timer-start', name: PEOPLE[cur].n, desc, type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value };
+    // عرض فوري على هذا الجهاز، ثم تثبيت من الشيت
+    const at = now();
+    timers.forEach((x) => { if (x.person === cur && x.pausedAt == null) x.pausedAt = at; });
+    timers.push({ ...payload, id: 'tmp-' + Date.now(), person: cur, startedAt: at, pausedTotal: 0, pausedAt: null, finalStatus: 'تم', pending: true });
+    renderTimers(); renderLive();
     $("teamDlg").close();
+    const err = await timerAct(payload);
+    if (err) status.textContent = 'تعذّر بدء المؤقت: ' + err;
   });
+
+  function cardError(id, msg) {
+    const card = document.querySelector(`.timer-card[data-id="${CSS.escape(id)}"]`);
+    if (card) card.querySelector('.timer-err').textContent = msg;
+    else status.textContent = msg;
+  }
 
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('.timer-card [data-act]');
     if (!btn) return;
     const card = btn.closest('.timer-card');
     const t = timers.find((x) => x.id === card.dataset.id);
-    if (!t) return;
+    if (!t || t.pending) return;
     const act = btn.dataset.act;
+    const at = now();
 
     if (act === 'pause' || act === 'resume') {
-      act === 'pause' ? pauseTimer(t) : resumeTimer(t);
-      saveTimers();
-      renderTimers();
+      if (act === 'pause') { if (t.pausedAt == null) t.pausedAt = at; }
+      else {
+        timers.forEach((x) => { if (x !== t && x.person === t.person && x.pausedAt == null) x.pausedAt = at; });
+        if (t.pausedAt != null) { t.pausedTotal += at - t.pausedAt; t.pausedAt = null; }
+      }
+      renderTimers(); renderLive();
+      const err = await timerAct({ action: 'timer-' + act, id: t.id });
+      if (err) cardError(t.id, err);
     } else if (act === 'cancel') {
       if (!confirm('إلغاء المؤقت؟ لن يُرسل أي شيء للشيت.')) return;
       timers = timers.filter((x) => x !== t);
-      saveTimers();
-      renderTimers();
+      renderTimers(); renderLive();
+      const err = await timerAct({ action: 'timer-cancel', id: t.id });
+      if (err) status.textContent = err;
     } else if (act === 'finish') {
       const start = new Date(t.startedAt);
-      const worked = Math.max(60 * 1000, workedMs(t)); // دقيقة على الأقل
-      let end = new Date(t.startedAt + worked);
+      const worked = workedMs(t, at);
+      let end = new Date(t.startedAt + Math.max(60 * 1000, worked)); // دقيقة على الأقل لوقت النهاية
       if (end.toDateString() !== start.toDateString()) { end = new Date(start); end.setHours(23, 59, 0, 0); }
       card.querySelectorAll('button, select').forEach((el) => { el.disabled = true; });
       card.querySelector('.timer-err').textContent = '';
-      const err = await postTask({
-        name: PEOPLE[t.person].n, desc: t.desc, date: start.toLocaleDateString('en-CA'),
-        start: hhmm(start), end: hhmm(end),
-        timer: fmtElapsed(workedMs(t)), // المدة الفعلية بالثانية (بدون أوقات الإيقاف)، تُكتب في عمود «مدة المؤقت»
+      const err = await timerAct({
+        action: 'timer-finish', id: t.id,
+        date: start.toLocaleDateString('en-CA'), start: hhmm(start), end: hhmm(end),
+        timer: fmtElapsed(worked), // المدة الفعلية بالثانية (بدون أوقات الإيقاف)
         status: card.querySelector('[data-role="status"]').value,
-        type: t.type, project: t.project, notes: t.notes,
       });
-      if (err) {
-        card.querySelector('.timer-err').textContent = err + ' — المؤقت محفوظ، جرّب مرة ثانية';
-        card.querySelectorAll('button, select').forEach((el) => { el.disabled = false; });
-        return;
-      }
-      timers = timers.filter((x) => x !== t);
-      saveTimers();
-      renderTimers();
+      if (err) { cardError(t.id, err + ' — المؤقت محفوظ، جرّب مرة ثانية'); renderTimers(); return; }
       await load();
     }
   });
@@ -639,17 +688,31 @@
     const sel = e.target.closest('.timer-card [data-role="status"]');
     if (!sel) return;
     const t = timers.find((x) => x.id === sel.closest('.timer-card').dataset.id);
-    if (t) { t.finalStatus = sel.value; saveTimers(); }
+    if (!t || t.pending) return;
+    t.finalStatus = sel.value;
+    timerAct({ action: 'timer-status', id: t.id, finalStatus: sel.value });
   });
 
-  // تحديث العدّاد كل ثانية دون إعادة بناء البطاقة (حتى لا يضيع اختيار الحالة)
+  // كل ثانية: العدّادات وسطر «الآن» دون إعادة بناء البطاقات
   setInterval(() => {
     document.querySelectorAll('[data-clock]').forEach((el) => {
       const t = timers.find((x) => x.id === el.dataset.clock);
       if (t) el.textContent = fmtElapsed(workedMs(t));
     });
+    document.querySelectorAll('[data-live]').forEach((el) => {
+      const t = timers.find((x) => x.id === el.dataset.live);
+      if (t) el.textContent = fmtSince(workedMs(t));
+    });
   }, 1000);
 
-  renderTimers();
+  // كل 20 ثانية: جلب المؤقتات فقط (طلب خفيف) لرؤية ما بدأه أو أوقفه الآخرون من أجهزتهم
+  setInterval(async () => {
+    if (document.hidden || !teamKey || timerBusy || !loaded) return;
+    try {
+      const j = await (await fetch(SCRIPT_URL + '?only=timers&key=' + encodeURIComponent(teamKey) + '&t=' + Date.now(), { cache: 'no-store' })).json();
+      if (j.timers && !timerBusy) setTimers(j.timers, j.now);
+    } catch (e) {}
+  }, 20 * 1000);
+
   load();
 })();
