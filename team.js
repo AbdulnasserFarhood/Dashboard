@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHkm-Oa1bvLQLOEbkvkSp71cUri_25mO8D9MUOaww3VzeYvNzuQUrjPPVCv6KqV1PV/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
