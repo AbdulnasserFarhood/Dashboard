@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqmOqz8l3OikVOOmhFNkRSSEq6vlhmxQX1wNS5uaCD1Fq9Bzn5uPTT4qotRtcw_0uT/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -110,10 +110,21 @@
               <div class="sc-line"><span class="sc-num" data-i="${i}">0</span> مهمة خلال هذا الشهر</div>
             </div>
           </div>
-        </div>`).join('');
+        </div>`).join('') + `
+        <div class="stat-wrap total" style="--d:${PEOPLE.length}">
+          <div class="stat-card">
+            <div class="sc-avatar">∑</div>
+            <div class="sc-body">
+              <div class="sc-name">مجموع مهام الفريق</div>
+              <div class="sc-line"><span class="sc-num" data-i="total">0</span> مهمة خلال هذا الشهر</div>
+            </div>
+          </div>
+        </div>`;
     }
     statsBox.querySelectorAll('.sc-num').forEach((el) => {
-      const target = monthCount(PEOPLE[+el.dataset.i]);
+      const target = el.dataset.i === 'total'
+        ? PEOPLE.reduce((sum, p) => sum + monthCount(p), 0)
+        : monthCount(PEOPLE[+el.dataset.i]);
       const old = el.dataset.target;
       el.dataset.target = target;
       // بعد العرض الأول: عند التحديث التلقائي يتحرك الرقم من قيمته الحالية للجديدة فقط
