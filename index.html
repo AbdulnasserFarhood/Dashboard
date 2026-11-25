@@ -142,10 +142,22 @@
   <div class="tab-panel" id="panel-team">
     <aside class="team-stats" id="teamStats" aria-label="مهام هذا الشهر لكل عضو"></aside>
 
+    <section class="box team-auth" id="teamAuth" hidden>
+      <div class="auth-ic">🔑</div>
+      <h2>مفتاح الفريق</h2>
+      <p>أدخل مفتاح الفريق لعرض المهام وإضافتها. يُطلب مرة واحدة على هذا الجهاز.</p>
+      <form id="teamAuthForm" class="auth-row">
+        <input type="password" id="teamKeyInput" placeholder="مفتاح الفريق" autocomplete="current-password" required>
+        <button type="submit" class="add-btn">دخول</button>
+      </form>
+      <p class="team-err" id="teamAuthErr"></p>
+    </section>
+
     <section class="box team-box">
       <div class="card-head">
         <h2>متابعة مهام الفريق</h2>
-        <span class="hint" id="teamStatus">جارٍ تحميل المهام…</span>
+        <span class="hint"><span id="teamStatus">جارٍ تحميل المهام…</span>
+          <button type="button" class="key-btn" id="teamKeyReset" title="تغيير مفتاح الفريق على هذا الجهاز">🔑</button></span>
       </div>
       <div class="refs">
         <b>مراجع</b>

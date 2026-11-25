@@ -222,3 +222,29 @@
 .team-stats.show-best .stat-wrap.best::before{background:#FBC132;opacity:.55}
 @keyframes crownIn{to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.team-stats.show-best .stat-wrap.best .sc-best{animation:none;opacity:1;transform:none}}
+
+/* =========================================================
+   مفتاح الفريق · الإصلاح السريع
+   ========================================================= */
+#panel-team.locked > :not(#teamAuth){display:none!important}
+.team-auth{text-align:center;padding:34px 24px;max-width:460px;margin:0 auto;width:100%}
+.team-auth .auth-ic{font-size:38px}
+.team-auth h2{margin:6px 0 4px;font-size:19px}
+.team-auth p{color:var(--mute);font-size:13px;margin:4px 0 14px}
+.auth-row{display:flex;gap:8px}
+.auth-row input{flex:1;padding:11px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
+.auth-row input:focus{outline:2px solid var(--primary);outline-offset:1px}
+.key-btn{border:0;background:transparent;cursor:pointer;font-size:13px;opacity:.55;padding:0 4px;transition:opacity .2s ease}
+.key-btn:hover{opacity:1}
+
+.fix{display:flex;gap:6px;margin-top:8px}
+.fix-btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;
+  padding:4px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:border-color .2s ease,background .2s ease}
+.fix-btn:hover{border-color:var(--primary)}
+.fix-btn.done{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.fix-btn:disabled{opacity:.55;cursor:wait}
+.fix-time{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--mute)}
+.fix-time[hidden]{display:none}
+.fix-time input{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12px}
+.fix-err{color:var(--high);font-size:12px;margin-top:4px}
+.fix-err:empty{display:none}

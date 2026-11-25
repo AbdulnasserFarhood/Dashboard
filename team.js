@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqmOqz8l3OikVOOmhFNkRSSEq6vlhmxQX1wNS5uaCD1Fq9Bzn5uPTT4qotRtcw_0uT/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -88,6 +88,18 @@
     const f = flags.get(r) || [];
     return `<div class="team-task${f.length ? ' flagged' : ''}">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${isDone(r) ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span>${r.timer ? `<span class="tm" title="المدة الفعلية من المؤقت">⏱ ${esc(r.timer)}</span>` : ''}</div>`
       + (f.length ? `<div class="flags">${f.includes('time') ? '<span class="flag" title="لا يوجد وقت بداية/نهاية ولا مدة مؤقت لهذه المهمة">⏱ بلا وقت مسجّل</span>' : ''}${f.includes('open') ? `<span class="flag open" title="آخر حالة لهذه المهمة ليست «تم»">⚠️ مفتوحة منذ ${daysAgo(r)} أيام</span>` : ''}</div>` : '')
+      // أزرار الإصلاح السريع — تعدّل نفس الصف في الشيت مباشرة
+      + (f.length && r.row ? `<div class="fix" data-row="${r.row}">
+          ${f.includes('open') ? '<button type="button" class="fix-btn done" data-fix="done">✓ تمّت</button>' : ''}
+          ${f.includes('time') ? '<button type="button" class="fix-btn" data-fix="time">+ وقت</button>' : ''}
+        </div>
+        <div class="fix-time" data-row="${r.row}" hidden>
+          <label>من <input type="time" step="900" value="09:00" class="ft-start"></label>
+          <label>إلى <input type="time" step="900" value="10:00" class="ft-end"></label>
+          <button type="button" class="fix-btn done" data-fix="save-time">حفظ</button>
+          <button type="button" class="fix-btn" data-fix="cancel-time">إلغاء</button>
+        </div>
+        <div class="fix-err"></div>` : '')
       + `</div>`;
   }
 
@@ -276,16 +288,53 @@
   });
 
   /* ----- تحميل البيانات من الشيت (بدون كاش، وتحديث تلقائي) ----- */
-  let loading = false;
-  async function load() {
+  /* ----- 🔑 مفتاح الفريق: يُحفظ على هذا الجهاز ويُرسل مع كل قراءة وكتابة ----- */
+  const KEY_STORE = 'team_key_v1';
+  let teamKey = '';
+  try { teamKey = localStorage.getItem(KEY_STORE) || ''; } catch (e) {}
+  const panel = $("panel-team");
+
+  function showAuth(msg) {
+    panel.classList.add('locked');
+    $("teamAuth").hidden = false;
+    $("teamAuthErr").textContent = msg || '';
+    status.textContent = 'بانتظار مفتاح الفريق';
+    setTimeout(() => $("teamKeyInput").focus(), 50);
+  }
+  function hideAuth() {
+    panel.classList.remove('locked');
+    $("teamAuth").hidden = true;
+  }
+  $("teamAuthForm").addEventListener('submit', (e) => {
+    e.preventDefault();
+    teamKey = $("teamKeyInput").value.trim();
+    try { localStorage.setItem(KEY_STORE, teamKey); } catch (x) {}
+    $("teamKeyInput").value = '';
+    $("teamAuthErr").textContent = 'جارٍ التحقق…';
+    load(true);
+  });
+  $("teamKeyReset").addEventListener('click', () => {
+    if (!confirm('تغيير مفتاح الفريق على هذا الجهاز؟')) return;
+    teamKey = '';
+    try { localStorage.removeItem(KEY_STORE); } catch (x) {}
+    rows = []; render(); showAuth();
+  });
+
+  let loading = false, pendingRender = false;
+  async function load(fromAuth) {
     if (SCRIPT_URL.startsWith('PASTE')) { status.textContent = 'ضع رابط الـ Web App في SCRIPT_URL'; return; }
+    if (!teamKey) { showAuth(); return; }
     if (loading) return;
     loading = true;
     try {
-      const j = await (await fetch(SCRIPT_URL + '?t=' + Date.now(), { cache: 'no-store' })).json();
-      if (!j.version) throw new Error('الشيت: السكربت المنشور نسخة قديمة — بـ Apps Script اعمل Deploy ← Manage deployments ← ✏️ ← New version');
+      const j = await (await fetch(SCRIPT_URL + '?key=' + encodeURIComponent(teamKey) + '&t=' + Date.now(), { cache: 'no-store' })).json();
+      if (j.auth === false) { loading = false; showAuth(fromAuth ? j.error : ''); return; }
+      if (!j.version || j.version < 4) throw new Error('الشيت: السكربت المنشور نسخة قديمة — بـ Apps Script اعمل Deploy ← Manage deployments ← ✏️ ← New version');
       if (j.error) throw new Error('الشيت ردّ بخطأ: ' + j.error);
+      hideAuth();
       rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
+      // لا نعيد الرسم أثناء إدخال وقت لمهمة حتى لا يضيع ما يُكتب
+      if (document.querySelector('.fix-time:not([hidden])')) { pendingRender = true; loading = false; return; }
       status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + ' · ' + rows.length + ' مهمة';
       render();
       if (!loaded) { loaded = true; if (teamTabActive()) playStats(); }
@@ -387,8 +436,9 @@
   /* يرسل صفاً واحداً للشيت. يرجّع null عند النجاح، أو نص الخطأ */
   async function postTask(payload) {
     try {
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ ...payload, key: teamKey }) });
       const j = await res.json();
+      if (j.auth === false) { showAuth(j.error); return j.error || 'مفتاح الفريق غير صحيح'; }
       return j.ok ? null : (j.error || 'فشل الإضافة');
     } catch (x) {
       return 'تعذّر الاتصال بالشيت، تحقق من الرابط وصلاحيات النشر';
@@ -407,6 +457,52 @@
     if (err) $("teamErr").textContent = err;
     else { $("teamDlg").close(); await load(); }
     $("teamGo").disabled = false;
+  });
+
+  /* ----- الإصلاح السريع: «تمّت» و«+ وقت» على المهام التي عليها تنبيه ----- */
+  async function updateRow(r, changes, card) {
+    const btns = card.querySelectorAll('.fix button, .fix-time button');
+    btns.forEach((b) => { b.disabled = true; });
+    card.querySelector('.fix-err').textContent = '';
+    const err = await postTask({ action: 'update', row: r.row, name: r.name, desc: r.desc, ...changes });
+    if (err) {
+      card.querySelector('.fix-err').textContent = err;
+      btns.forEach((b) => { b.disabled = false; });
+      return false;
+    }
+    return true;
+  }
+  const toMin = (t) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
+
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-fix]');
+    if (!b) return;
+    const card = b.closest('.team-task');
+    const rowNum = +(b.closest('[data-row]').dataset.row);
+    const r = rows.find((x) => x.row === rowNum);
+    if (!r) return;
+    const act = b.dataset.fix;
+    const timeBox = card.querySelector('.fix-time');
+
+    if (act === 'time') { timeBox.hidden = false; card.querySelector('.fix').hidden = true; timeBox.querySelector('.ft-start').focus(); return; }
+    if (act === 'cancel-time') {
+      timeBox.hidden = true; card.querySelector('.fix').hidden = false;
+      if (pendingRender) { pendingRender = false; render(); }
+      return;
+    }
+    if (act === 'done') {
+      if (await updateRow(r, { status: 'تم' }, card)) { r.status = 'تم'; render(); load(); }
+      return;
+    }
+    if (act === 'save-time') {
+      const start = timeBox.querySelector('.ft-start').value, end = timeBox.querySelector('.ft-end').value;
+      if (!start || !end || toMin(end) <= toMin(start)) { card.querySelector('.fix-err').textContent = 'وقت النهاية يجب أن يكون بعد وقت البداية'; return; }
+      if (await updateRow(r, { start, end }, card)) {
+        r.start = start; r.end = end; r.hours = Math.round((toMin(end) - toMin(start)) / 60 * 100) / 100;
+        timeBox.hidden = true; pendingRender = false;
+        render(); load();
+      }
+    }
   });
 
   /* =========================================================
