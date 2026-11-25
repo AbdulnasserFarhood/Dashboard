@@ -1,47 +1,50 @@
 /* =========================================================
    مساحتي — Theme variables & base layout
    ========================================================= */
+/* الهوية: Deep Teal (أساسي) · Warm Orange (لمسات وأزرار) · Soft Cream (خلفية) */
 :root{
-  --bg:#f3f4fb;
+  --bg:#FFF7ED;
   --card:#ffffff;
-  --ink:#1f2333;
-  --ink-soft:#3a3f55;
-  --mute:#6b7085;
-  --line:#e6e8f2;
-  --primary:#6c5ce7;
+  --ink:#1c2b33;
+  --ink-soft:#344852;
+  --mute:#6f7a80;
+  --line:#efe2d2;
+  --primary:#156082;
   --primary-ink:#ffffff;
-  --primary-soft:#ece9ff;
-  --accent:#00bfa6;
-  --high:#ff6b6b;
-  --high-bg:#ffe3e3;
-  --medium:#f5a623;
-  --medium-bg:#fff2d9;
-  --low:#2ecc71;
-  --low-bg:#def7e9;
+  --primary-soft:#e2eff4;
+  --accent:#E97132;
+  --accent-ink:#ffffff;
+  --high:#e5484d;
+  --high-bg:#fde4e4;
+  --medium:#f0a43a;
+  --medium-bg:#fff1dc;
+  --low:#2f9e6e;
+  --low-bg:#ddf3e8;
   --radius-lg:20px;
   --radius-md:14px;
   --radius-sm:10px;
-  --shadow:0 10px 30px rgba(31,35,51,.07);
-  --shadow-sm:0 4px 12px rgba(31,35,51,.06);
+  --shadow:0 10px 30px rgba(21,96,130,.08);
+  --shadow-sm:0 4px 12px rgba(21,96,130,.06);
   color-scheme:light;
 }
 html[data-theme="dark"]{
-  --bg:#12131d;
-  --card:#1a1c2a;
-  --ink:#eceef6;
-  --ink-soft:#c6c9da;
-  --mute:#9aa0b8;
-  --line:#2a2d40;
-  --primary:#9b8cff;
-  --primary-ink:#15162a;
-  --primary-soft:#242649;
-  --accent:#2dd4bf;
-  --high:#ff8787;
-  --high-bg:#3a2230;
+  --bg:#0e1a20;
+  --card:#14252d;
+  --ink:#eef3f5;
+  --ink-soft:#c5d3d9;
+  --mute:#8fa3ab;
+  --line:#22373f;
+  --primary:#4fa8cf;
+  --primary-ink:#06141a;
+  --primary-soft:#173847;
+  --accent:#F28A52;
+  --accent-ink:#1d0d03;
+  --high:#ff7b7f;
+  --high-bg:#3a2226;
   --medium:#ffc266;
   --medium-bg:#3a2f1c;
-  --low:#5fe0a0;
-  --low-bg:#1c3328;
+  --low:#5fd3a0;
+  --low-bg:#183328;
   --shadow:0 10px 30px rgba(0,0,0,.45);
   --shadow-sm:0 4px 14px rgba(0,0,0,.35);
   color-scheme:dark;
@@ -119,8 +122,7 @@ html[data-theme="dark"] .logo-dark{display:block}
   background:var(--primary);color:var(--primary-ink);box-shadow:var(--shadow-sm);
   transition:transform .15s ease,box-shadow .15s ease;
 }
-.qa-btn.alt{background:var(--accent);color:#06281f}
-html[data-theme="dark"] .qa-btn.alt{color:#07140f}
+.qa-btn.alt{background:var(--accent);color:var(--accent-ink)}
 .qa-btn.draw{background:var(--medium);color:#2b1900}
 html[data-theme="dark"] .qa-btn.draw{color:#1f1400}
 .qa-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}

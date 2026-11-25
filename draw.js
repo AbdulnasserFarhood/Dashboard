@@ -12,7 +12,7 @@
   const ctx = canvas.getContext("2d");
   const STORE_KEY = "workspace_draw_v1";
 
-  const COLORS = ["#1b1f2a", "#6c5ce7", "#ff6b6b", "#00bfa6", "#2ecc71", "#f5a623"];
+  const COLORS = ["#1b1f2a", "#156082", "#ff6b6b", "#E97132", "#2ecc71", "#f5a623"];
   let currentColor = COLORS[0];
   let currentSize = 5;
   let erasing = false;

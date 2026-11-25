@@ -10,7 +10,8 @@
 
   // الألوان الجاهزة: الألوان الباردة (الأساسي/الأزرق/الأخضر) أولاً، ثم الدافئة
   const PRESET_COLORS = [
-    { hex: "#e3dcff", name: "بنفسجي (أساسي)" },
+    { hex: "#d4e8f0", name: "تركوازي (أساسي)" },
+    { hex: "#fde3d2", name: "برتقالي فاتح" },
     { hex: "#d2e9fb", name: "أزرق" },
     { hex: "#cff4d2", name: "أخضر" },
     { hex: "#ffe0c2", name: "خوخي" },
@@ -19,7 +20,7 @@
   ];
   const DEFAULT_COLOR = PRESET_COLORS[0].hex;
   // توافق مع ملاحظات محفوظة من نسخة سابقة كانت تخزّن اسم اللون بدل قيمته
-  const LEGACY_COLOR_MAP = { yellow: "#fff3b0", pink: "#ffd3e0", green: "#cff4d2", blue: "#d2e9fb", peach: "#ffe0c2" };
+  const LEGACY_COLOR_MAP = { "#e3dcff": "#d4e8f0", yellow: "#fff3b0", pink: "#ffd3e0", green: "#cff4d2", blue: "#d2e9fb", peach: "#ffe0c2" };
 
   const grid = $("notesGrid");
   const addTile = $("addNoteTile");
