@@ -99,6 +99,7 @@
     loading = true;
     try {
       const j = await (await fetch(SCRIPT_URL + '?t=' + Date.now(), { cache: 'no-store' })).json();
+      if (!j.version) throw new Error('الشيت: السكربت المنشور نسخة قديمة — بـ Apps Script اعمل Deploy ← Manage deployments ← ✏️ ← New version');
       if (j.error) throw new Error('الشيت ردّ بخطأ: ' + j.error);
       rows = (j.rows || []).map((r, idx) => ({ ...r, _i: idx }));
       status.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) + ' · ' + rows.length + ' مهمة';
