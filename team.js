@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyqmOqz8l3OikVOOmhFNkRSSEq6vlhmxQX1wNS5uaCD1Fq9Bzn5uPTT4qotRtcw_0uT/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -48,102 +48,212 @@
   const SHOW_N = 2;
   const expanded = new Set();
   const thisMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7); // "2026-11"
+  const DAY = 86400000;
+  const OPEN_DAYS = 3;      // مهمة غير مكتملة أقدم من هذا = تنبيه
+  const LOOKBACK_DAYS = 30; // لا ننبّه على مهام أقدم من شهر
+  const BEST_MIN = 5;       // أقل عدد مهام بالشهر لدخول مقارنة «الأفضل أداءً»
+
+  const belongs = (p, r) => String(r.name || '').toLowerCase().includes(p.k);
+  const stOf = (r) => String(r.status || '').trim();
+  const isAbsence = (r) => stOf(r) === 'غياب';
+  const isDone = (r) => stOf(r) === 'تم';
+  const inMonth = (r) => String(r.date).startsWith(thisMonth());
+  const daysAgo = (r) => Math.floor((Date.now() - new Date(String(r.date) + 'T00:00:00').getTime()) / DAY);
+  const noTime = (r) => !isAbsence(r) && !(parseFloat(r.hours) > 0) && !r.timer;
+  // نفس المهمة رغم اختلاف الأحرف الكبيرة والمسافات وبادئة Fusion 360
+  const normDesc = (s) => String(s || '').toLowerCase().replace(/^fusion 360 \|\s*/, '').replace(/\s+/g, ' ').trim();
+  // مفتاح «مرن» يجمع الأخطاء الإملائية الشائعة (certeficate = certificate)
+  const looseKey = (s) => normDesc(s).replace(/[aeiouy]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+
+  function personMonth(p) {
+    const list = rows.filter((r) => belongs(p, r) && inMonth(r) && !isAbsence(r));
+    const done = list.filter(isDone).length;
+    return { list, total: list.length, done, pct: list.length ? Math.round(done / list.length * 100) : 0 };
+  }
+  // آخر سجل لكل مهمة عند الشخص: إن لم يكن «تم» وعمره أكثر من 3 أيام فهي مفتوحة
+  function openTasks(p) {
+    const latest = new Map();
+    rows.filter((r) => belongs(p, r) && !isAbsence(r) && daysAgo(r) <= LOOKBACK_DAYS).forEach((r) => {
+      const k = looseKey(r.desc);
+      const c = latest.get(k);
+      if (!c || String(r.date) > String(c.date) || (r.date === c.date && r._i > c._i)) latest.set(k, r);
+    });
+    return [...latest.values()].filter((r) => !isDone(r) && daysAgo(r) > OPEN_DAYS);
+  }
+
+  let flags = new Map(); // صف → ['time', 'open']
+  const addFlag = (r, f) => flags.set(r, [...(flags.get(r) || []), f]);
+
+  function taskCard(r) {
+    const f = flags.get(r) || [];
+    return `<div class="team-task${f.length ? ' flagged' : ''}">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${isDone(r) ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span>${r.timer ? `<span class="tm" title="المدة الفعلية من المؤقت">⏱ ${esc(r.timer)}</span>` : ''}</div>`
+      + (f.length ? `<div class="flags">${f.includes('time') ? '<span class="flag" title="لا يوجد وقت بداية/نهاية ولا مدة مؤقت لهذه المهمة">⏱ بلا وقت مسجّل</span>' : ''}${f.includes('open') ? `<span class="flag open" title="آخر حالة لهذه المهمة ليست «تم»">⚠️ مفتوحة منذ ${daysAgo(r)} أيام</span>` : ''}</div>` : '')
+      + `</div>`;
+  }
 
   function render() {
+    flags = new Map();
+    const alerts = [];
     PEOPLE.forEach((p, i) => {
       const mine = rows
-        .filter((r) => String(r.name || '').toLowerCase().includes(p.k))
+        .filter((r) => belongs(p, r))
         // الأحدث تاريخاً أولاً؛ وفي نفس اليوم الصف المضاف لاحقاً في الشيت أولاً
         .sort((a, b) => String(b.date).localeCompare(String(a.date)) || b._i - a._i);
-      const month = mine.filter((r) => String(r.date).startsWith(thisMonth()));
-      const hours = month.reduce((a, r) => a + (parseFloat(r.hours) || 0), 0);
+      const ms = personMonth(p);
+      const hours = ms.list.reduce((a, r) => a + (parseFloat(r.hours) || 0), 0);
+      const missing = ms.list.filter(noTime);
+      const open = openTasks(p);
+      missing.forEach((r) => addFlag(r, 'time'));
+      open.forEach((r) => addFlag(r, 'open'));
+      if (missing.length || open.length) alerts.push({ i, missing: missing.length, open: open.length });
+
       const statEl = $("team-s-" + i);
       const listEl = $("team-l-" + i);
-      if (statEl) statEl.textContent = `هذا الشهر: ${month.length} مهام · ${hours.toFixed(2)} ساعة`;
+      if (statEl) statEl.textContent = `هذا الشهر: ${ms.total} مهام · ${hours.toFixed(2)} ساعة · إنجاز ${ms.pct}%`;
       if (listEl) {
-        const card = (r) => `<div class="team-task">${esc(r.desc)}<div class="m"><span>${esc(r.date)}</span><span class="${r.status === 'تم' ? 'ok' : 'pt'}">${esc(r.status)}</span><span>${esc(r.hours || '—')} س</span>${r.timer ? `<span class="tm" title="المدة الفعلية من المؤقت">⏱ ${esc(r.timer)}</span>` : ''}</div></div>`;
         const rest = mine.slice(SHOW_N);
-        const open = expanded.has(i);
-        listEl.innerHTML = (mine.slice(0, SHOW_N).map(card).join('') || '<div class="team-msg">لا مهام بعد</div>')
+        const isOpen = expanded.has(i);
+        listEl.innerHTML = (mine.slice(0, SHOW_N).map(taskCard).join('') || '<div class="team-msg">لا مهام بعد</div>')
           + (rest.length ? `
-            <div class="team-extra${open ? ' open' : ''}" id="team-x-${i}"><div class="team-extra-inner">${rest.map(card).join('')}</div></div>
-            <button type="button" class="team-more${open ? ' open' : ''}" data-more="${i}" aria-expanded="${open}">
-              <span class="lbl">${moreLabel(open, mine.length)}</span><span class="chev">▾</span>
+            <div class="team-extra${isOpen ? ' open' : ''}" id="team-x-${i}"><div class="team-extra-inner">${rest.map(taskCard).join('')}</div></div>
+            <button type="button" class="team-more${isOpen ? ' open' : ''}" data-more="${i}" aria-expanded="${isOpen}">
+              <span class="lbl">${moreLabel(isOpen, mine.length)}</span><span class="chev">▾</span>
             </button>` : '');
       }
     });
+    renderAlerts(alerts);
     renderStats();
   }
 
+  /* ----- شريط التنبيهات أعلى تبويب الفريق ----- */
+  function renderAlerts(list) {
+    const box = $("teamAlerts");
+    if (!box) return;
+    if (!list.length) {
+      box.className = 'team-alerts ok';
+      box.innerHTML = '✅ لا تنبيهات — كل مهام الشهر مسجّلة بوقت، ولا مهام مفتوحة أكثر من 3 أيام';
+      return;
+    }
+    const tm = list.reduce((a, x) => a + x.missing, 0), op = list.reduce((a, x) => a + x.open, 0);
+    box.className = 'team-alerts';
+    box.innerHTML = `<b>⚠️ تنبيهات:</b> ${tm ? `${tm} مهمة بلا وقت مسجّل` : ''}${tm && op ? ' · ' : ''}${op ? `${op} مهمة مفتوحة منذ أكثر من 3 أيام` : ''}
+      <div class="alert-chips">${list.map((x) => `<button type="button" class="alert-chip" data-jump="${x.i}">${esc(PEOPLE[x.i].n)}: ${[x.missing ? `⏱ ${x.missing}` : '', x.open ? `⚠️ ${x.open}` : ''].filter(Boolean).join(' · ')}</button>`).join('')}</div>`;
+  }
+  // الضغط على اسم: تُفتح قائمة مهامه كاملة ونذهب إليها
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-jump]');
+    if (!b) return;
+    const i = +b.dataset.jump;
+    expanded.add(i);
+    render();
+    const box = $("team-l-" + i).closest('.box');
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+  });
+
   /* =========================================================
-     بطاقات مهام الشهر (يسار الصفحة): تظهر بالتتابع، والعدد يتصاعد من 0
+     بطاقات مهام الشهر (يسار الصفحة): تظهر بالتتابع، والعدد ونسبة الإنجاز يتصاعدان من 0
      ========================================================= */
   const statsBox = $("teamStats");
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let loaded = false;
+  let bestTimer = null;
 
-  function monthCount(p) {
-    return rows.filter((r) => String(r.name || '').toLowerCase().includes(p.k) && String(r.date).startsWith(thisMonth())).length;
-  }
-  function countUp(el, from, to, dur = 1000) {
+  function countUp(el, from, to, dur = 1000, suffix = '') {
     cancelAnimationFrame(el._raf);
-    if (reduceMotion) { el.textContent = to; return; }
+    if (reduceMotion) { el.textContent = to + suffix; return; }
     const t0 = performance.now();
     const step = (now) => {
       const p = Math.min(1, (now - t0) / dur);
-      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))) + suffix;
       if (p < 1) el._raf = requestAnimationFrame(step);
     };
     el._raf = requestAnimationFrame(step);
   }
   function teamTabActive() { return $("panel-team").classList.contains('active'); }
 
-  function renderStats() {
-    if (!statsBox) return;
-    if (!statsBox.children.length) {
-      statsBox.innerHTML = PEOPLE.map((p, i) => `
-        <div class="stat-wrap" style="--d:${i}">
+  // «الأفضل أداءً»: أعلى نسبة إنجاز مع مراعاة حجم العمل — (المكتمل + 2) ÷ (الكل + 4)
+  // حتى لا يتفوّق 5 من 5 على 18 من 19. المشرف خارج المقارنة، وحد أدنى BEST_MIN مهام.
+  function bestIndex() {
+    let best = -1, score = -1;
+    PEOPLE.forEach((p, i) => {
+      if (i === 0) return;
+      const s = personMonth(p);
+      if (s.total < BEST_MIN) return;
+      const sc = (s.done + 2) / (s.total + 4);
+      if (sc > score + 1e-9 || (Math.abs(sc - score) < 1e-9 && s.done > personMonth(PEOPLE[best]).done)) { best = i; score = sc; }
+    });
+    return best;
+  }
+
+  function statCard(i, avatar, name, cls) {
+    return `
+        <div class="stat-wrap${cls}" style="--d:${i}" data-card="${i === PEOPLE.length ? 'total' : i}">
           <div class="stat-card">
-            <div class="sc-avatar">${esc(p.n.trim().charAt(0).toUpperCase())}</div>
+            <span class="sc-best" title="أعلى نسبة إنجاز هذا الشهر مع مراعاة عدد المهام (${BEST_MIN} مهام على الأقل). المشرف خارج المقارنة.">👑 الأفضل أداءً</span>
+            <div class="sc-avatar">${avatar}</div>
             <div class="sc-body">
-              <div class="sc-name">${esc(p.n)}</div>
-              <div class="sc-line"><span class="sc-num" data-i="${i}">0</span> مهمة خلال هذا الشهر</div>
-            </div>
-          </div>
-        </div>`).join('') + `
-        <div class="stat-wrap total" style="--d:${PEOPLE.length}">
-          <div class="stat-card">
-            <div class="sc-avatar">∑</div>
-            <div class="sc-body">
-              <div class="sc-name">مجموع مهام الفريق</div>
-              <div class="sc-line"><span class="sc-num" data-i="total">0</span> مهمة خلال هذا الشهر</div>
+              <div class="sc-name">${name}</div>
+              <div class="sc-line"><span class="sc-num">0</span> مهمة خلال هذا الشهر</div>
+              <div class="sc-rate" title="المهام المكتملة (تم) من مهام هذا الشهر"><span class="sc-bar"><i></i></span><span class="sc-pct">0%</span> إنجاز</div>
             </div>
           </div>
         </div>`;
+  }
+
+  function cardData(key) {
+    if (key === 'total') {
+      const all = PEOPLE.map(personMonth);
+      const total = all.reduce((a, s) => a + s.total, 0), done = all.reduce((a, s) => a + s.done, 0);
+      return { total, pct: total ? Math.round(done / total * 100) : 0 };
     }
-    statsBox.querySelectorAll('.sc-num').forEach((el) => {
-      const target = el.dataset.i === 'total'
-        ? PEOPLE.reduce((sum, p) => sum + monthCount(p), 0)
-        : monthCount(PEOPLE[+el.dataset.i]);
-      const old = el.dataset.target;
-      el.dataset.target = target;
-      // بعد العرض الأول: عند التحديث التلقائي يتحرك الرقم من قيمته الحالية للجديدة فقط
-      if (statsBox.classList.contains('play') && old !== undefined && +old !== target && !el._t) countUp(el, +el.textContent || 0, target, 600);
+    return personMonth(PEOPLE[+key]);
+  }
+
+  function renderStats() {
+    if (!statsBox) return;
+    if (!statsBox.children.length) {
+      statsBox.innerHTML = PEOPLE.map((p, i) => statCard(i, esc(p.n.trim().charAt(0).toUpperCase()), esc(p.n), '')).join('')
+        + statCard(PEOPLE.length, '∑', 'مجموع مهام الفريق', ' total');
+    }
+    const best = bestIndex();
+    statsBox.querySelectorAll('.stat-wrap').forEach((w) => {
+      const d = cardData(w.dataset.card);
+      w.classList.toggle('best', String(best) === w.dataset.card);
+      const num = w.querySelector('.sc-num'), pct = w.querySelector('.sc-pct'), bar = w.querySelector('.sc-bar i');
+      const oldN = num.dataset.target, oldP = pct.dataset.target;
+      num.dataset.target = d.total;
+      pct.dataset.target = d.pct;
+      // بعد العرض الأول: عند التحديث التلقائي تتحرك القيم من الحالية للجديدة فقط
+      if (statsBox.classList.contains('play') && !w._pending) {
+        if (oldN !== undefined && +oldN !== d.total) countUp(num, parseInt(num.textContent) || 0, d.total, 600);
+        if (oldP !== undefined && +oldP !== d.pct) countUp(pct, parseInt(pct.textContent) || 0, d.pct, 600, '%');
+        bar.style.width = d.pct + '%';
+      }
     });
   }
 
   function playStats() {
     if (!statsBox || !loaded) return;
-    statsBox.classList.remove('play');
+    statsBox.classList.remove('play', 'show-best');
     void statsBox.offsetWidth; // لإعادة تشغيل حركة الظهور
     statsBox.classList.add('play');
-    statsBox.querySelectorAll('.sc-num').forEach((el, i) => {
-      cancelAnimationFrame(el._raf);
-      clearTimeout(el._t);
-      el.textContent = '0';
-      // يبدأ العدّ لحظة ظهور البطاقة نفسها
-      el._t = setTimeout(() => { el._t = null; countUp(el, 0, +el.dataset.target); }, reduceMotion ? 0 : i * 350 + 250);
+    clearTimeout(bestTimer);
+    const wraps = [...statsBox.querySelectorAll('.stat-wrap')];
+    wraps.forEach((w, i) => {
+      const num = w.querySelector('.sc-num'), pct = w.querySelector('.sc-pct'), bar = w.querySelector('.sc-bar i');
+      cancelAnimationFrame(num._raf); cancelAnimationFrame(pct._raf); clearTimeout(w._pending);
+      num.textContent = '0'; pct.textContent = '0%'; bar.style.width = '0%';
+      // يبدأ العدّ وامتلاء الشريط لحظة ظهور البطاقة نفسها
+      w._pending = setTimeout(() => {
+        w._pending = null;
+        countUp(num, 0, +num.dataset.target);
+        countUp(pct, 0, +pct.dataset.target, 1000, '%');
+        bar.style.width = pct.dataset.target + '%';
+      }, reduceMotion ? 0 : i * 350 + 250);
     });
+    // التاج يظهر بعد انتهاء عدّ كل البطاقات
+    bestTimer = setTimeout(() => statsBox.classList.add('show-best'), reduceMotion ? 0 : (wraps.length - 1) * 350 + 1400);
   }
 
   document.addEventListener('tab-change', (e) => { if (e.detail === 'team') playStats(); });
@@ -199,6 +309,7 @@
     $("teamDate").value = new Date().toLocaleDateString('en-CA');
     $("teamErr").textContent = '';
     $("teamDesc").value = '';
+    hideAc();
     $("teamNt").value = '';
     // حركة "نبضة" على زر + ثم تُفتح النافذة بعدها مباشرة
     b.classList.remove('pop');
@@ -208,6 +319,70 @@
   });
 
   $("teamCancel").addEventListener('click', () => $("teamDlg").close());
+
+  /* ----- اقتراح تلقائي لوصف المهمة (لتوحيد التسمية) ----- */
+  const acBox = $("teamAc"), descEl = $("teamDesc");
+  let acItems = [], acSel = -1;
+
+  function taskIndex() {
+    const groups = new Map();
+    rows.forEach((r) => {
+      const text = String(r.desc || '').replace(/^fusion 360 \|\s*/i, '').trim();
+      const k = looseKey(text);
+      if (!text || !k || isAbsence(r)) return;
+      let g = groups.get(k);
+      if (!g) { g = { k, variants: new Map(), count: 0, last: '', people: new Set(), type: '', project: '' }; groups.set(k, g); }
+      g.count++;
+      g.variants.set(text, (g.variants.get(text) || 0) + 1);
+      PEOPLE.forEach((p, i) => { if (belongs(p, r)) g.people.add(i); });
+      if (String(r.date) >= g.last) { g.last = String(r.date); g.type = r.type; g.project = r.project; }
+    });
+    // الكتابة الأكثر استخداماً هي المعتمدة لكل مجموعة
+    groups.forEach((g) => { g.text = [...g.variants.entries()].sort((a, b) => b[1] - a[1])[0][0]; });
+    return [...groups.values()];
+  }
+
+  function hideAc() { acBox.hidden = true; acBox.innerHTML = ''; acItems = []; acSel = -1; }
+  function showAc() {
+    const q = descEl.value.trim(), qn = normDesc(q), ql = looseKey(q);
+    if (qn.length < 2) return hideAc();
+    acItems = taskIndex()
+      .filter((g) => normDesc(g.text) !== qn && (normDesc(g.text).includes(qn) || (ql.length >= 2 && g.k.includes(ql))))
+      .sort((a, b) => (b.people.has(cur) - a.people.has(cur)) || b.count - a.count || b.last.localeCompare(a.last))
+      .slice(0, 6);
+    if (!acItems.length) return hideAc();
+    acSel = -1;
+    acBox.innerHTML = '<div class="ac-head">مهام مستخدمة سابقاً — اختر واحدة لتوحيد الاسم</div>'
+      + acItems.map((g, i) => `<div class="ac-item" role="option" data-ac="${i}"><span>${esc(g.text)}</span><small>${g.count} مرة${g.type ? ' · ' + esc(g.type) : ''}</small></div>`).join('');
+    acBox.hidden = false;
+  }
+  function pickAc(i) {
+    const g = acItems[i];
+    if (!g) return;
+    descEl.value = g.text;
+    if (g.type && TYPES.includes(g.type)) $("teamTy").value = g.type;
+    if (g.project && PROJECTS.includes(g.project)) $("teamPr").value = g.project;
+    hideAc();
+    descEl.focus();
+  }
+  descEl.addEventListener('input', showAc);
+  descEl.addEventListener('blur', () => setTimeout(hideAc, 120));
+  descEl.addEventListener('keydown', (e) => {
+    if (acBox.hidden) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      acSel = (acSel + (e.key === 'ArrowDown' ? 1 : -1) + acItems.length) % acItems.length;
+      acBox.querySelectorAll('.ac-item').forEach((el, i) => el.classList.toggle('sel', i === acSel));
+    } else if (e.key === 'Enter' && acSel >= 0) {
+      e.preventDefault(); pickAc(acSel);
+    } else if (e.key === 'Escape') {
+      e.preventDefault(); hideAc(); // يغلق الاقتراحات فقط، لا النافذة
+    }
+  });
+  acBox.addEventListener('mousedown', (e) => {
+    const it = e.target.closest('[data-ac]');
+    if (it) { e.preventDefault(); pickAc(+it.dataset.ac); }
+  });
 
   /* يرسل صفاً واحداً للشيت. يرجّع null عند النجاح، أو نص الخطأ */
   async function postTask(payload) {

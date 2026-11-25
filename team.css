@@ -174,3 +174,51 @@
 .team-stats.play .stat-wrap{animation:statIn .65s cubic-bezier(.2,.9,.3,1.12) both;animation-delay:calc(var(--d) * .35s)}
 @keyframes statIn{from{opacity:0;transform:translateX(70px) scale(.94)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.team-stats.play .stat-wrap{animation:none;opacity:1}}
+
+/* =========================================================
+   التنبيهات · الاقتراح التلقائي · نسبة الإنجاز · الأفضل أداءً
+   ========================================================= */
+.team-alerts{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13px;
+  background:var(--medium-bg);border:1px solid color-mix(in srgb,var(--medium) 45%,transparent)}
+.team-alerts:empty{display:none}
+.team-alerts.ok{background:var(--low-bg);border-color:color-mix(in srgb,var(--low) 40%,transparent);color:var(--ink-soft)}
+.alert-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.alert-chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;
+  padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;transition:border-color .2s ease,transform .15s ease}
+.alert-chip:hover{border-color:var(--medium);transform:translateY(-1px)}
+
+.team-task.flagged{border-color:color-mix(in srgb,var(--medium) 60%,var(--line))}
+.team-task .flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.team-task .flag{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--medium-bg);color:color-mix(in srgb,var(--medium) 70%,var(--ink))}
+.team-task .flag.open{background:var(--high-bg);color:color-mix(in srgb,var(--high) 75%,var(--ink))}
+.box.flash{animation:boxFlash 1.4s ease}
+@keyframes boxFlash{0%,100%{box-shadow:var(--shadow-sm)}25%{box-shadow:0 0 0 3px var(--accent)}}
+
+/* الاقتراحات أسفل خانة الوصف */
+.ac-list{margin-top:6px;border:1px solid var(--line);border-radius:10px;background:var(--card);
+  box-shadow:var(--shadow-sm);overflow:hidden;max-height:230px;overflow-y:auto}
+.ac-head{font-size:11px;color:var(--mute);padding:6px 10px;border-bottom:1px solid var(--line)}
+.ac-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 10px;cursor:pointer;font-size:13px}
+.ac-item small{color:var(--mute);font-size:11px;white-space:nowrap}
+.ac-item:hover,.ac-item.sel{background:var(--primary-soft)}
+
+/* شريط نسبة الإنجاز داخل البطاقات */
+.sc-rate{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;color:var(--mute)}
+.sc-bar{flex:1;min-width:50px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.sc-bar i{display:block;height:100%;width:0;border-radius:inherit;background:var(--c);transition:width 1s cubic-bezier(.2,.8,.3,1)}
+.sc-pct{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat-wrap.total .sc-rate{color:rgba(255,255,255,.85)}
+.stat-wrap.total .sc-bar{background:rgba(255,255,255,.25)}
+.stat-wrap.total .sc-bar i{background:#fff}
+.stat-wrap.total .sc-pct{color:#fff}
+
+/* الأفضل أداءً: تاج + توهّج ذهبي، يظهر بعد انتهاء العدّ */
+.sc-best{position:absolute;top:-11px;left:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;
+  background:#FBC132;color:#3a2a00;box-shadow:0 4px 12px rgba(251,193,50,.45);
+  opacity:0;transform:translateY(6px) scale(.8);pointer-events:auto;cursor:help}
+.stat-wrap:not(.best) .sc-best{display:none}
+.team-stats.show-best .stat-wrap.best .sc-best{animation:crownIn .55s cubic-bezier(.3,1.6,.5,1) both}
+.team-stats.show-best .stat-wrap.best .stat-card{border-color:#FBC132;box-shadow:0 0 0 2px rgba(251,193,50,.35)}
+.team-stats.show-best .stat-wrap.best::before{background:#FBC132;opacity:.55}
+@keyframes crownIn{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.team-stats.show-best .stat-wrap.best .sc-best{animation:none;opacity:1;transform:none}}
