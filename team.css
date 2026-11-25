@@ -138,14 +138,17 @@
   }
 }
 
-.stat-wrap{position:relative;opacity:0}
+.stat-wrap{position:relative;opacity:0;--c:#156082;--c-ink:#ffffff}
+/* لون مستقل لكل بطاقة: تركوازي، أصفر، برتقالي، وردي */
+.stat-wrap:nth-child(2){--c:#FBC132;--c-ink:#3a2a00}
+.stat-wrap:nth-child(3){--c:#E97132}
+.stat-wrap:nth-child(4){--c:#FB416A}
 /* التوهّج خلف البطاقة: تدرّج تركوازي ← برتقالي */
 .stat-wrap::before{
   content:'';position:absolute;inset:12px 16px 4px;border-radius:20px;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
+  background:var(--c);
   filter:blur(22px);opacity:.32;transition:opacity .3s ease;
 }
-.stat-wrap:nth-child(even)::before{background:linear-gradient(135deg,var(--accent),var(--primary))}
 .stat-wrap:hover::before{opacity:.55}
 .stat-card{
   position:relative;display:flex;align-items:center;gap:14px;
@@ -153,7 +156,7 @@
 }
 .sc-avatar{
   width:46px;height:46px;flex-shrink:0;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-weight:900;font-size:20px;
+  background:var(--c);color:var(--c-ink);font-weight:900;font-size:20px;
 }
 .sc-body{min-width:0}
 .sc-name{font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
