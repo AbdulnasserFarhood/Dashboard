@@ -6,7 +6,7 @@
   "use strict";
 
   /* ===== الإعدادات: نفس رابط الـ Web App السابق ===== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHkm-Oa1bvLQLOEbkvkSp71cUri_25mO8D9MUOaww3VzeYvNzuQUrjPPVCv6KqV1PV/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIjbTGmj8OMMDYN6Q_x85Ifh5DWdzfVG4eZMiDxyP1agarqPZFFZlBnyKOQiOPUWGs/exec';
   const DEFAULT_PROJECT = 'RoboGeex';
   /* =================================================== */
 
@@ -448,16 +448,33 @@
 
   $("teamForm").addEventListener('submit', async (e) => {
     e.preventDefault();
-    $("teamGo").disabled = true;
+    const go = $("teamGo");
+    if (go.classList.contains('is-busy')) return;
+    go.disabled = true;
+    go.classList.remove('is-err');
+    go.classList.add('is-busy');
+    go.innerHTML = '<span class="spin" aria-hidden="true"></span>جارٍ الإضافة…';
     $("teamErr").textContent = '';
     const err = await postTask({
       name: PEOPLE[cur].n, desc: $("teamDesc").value.trim(), date: $("teamDate").value,
       start: $("teamT1").value, end: $("teamT2").value,
       status: $("teamSt").value, type: $("teamTy").value, project: $("teamPr").value, notes: $("teamNt").value,
     });
-    if (err) $("teamErr").textContent = err;
-    else { $("teamDlg").close(); await load(); }
-    $("teamGo").disabled = false;
+    go.classList.remove('is-busy');
+    if (err) {
+      $("teamErr").textContent = err;
+      go.textContent = 'إضافة للشيت';
+      void go.offsetWidth; go.classList.add('is-err'); // هزّة خفيفة
+    } else {
+      go.classList.add('is-done');
+      go.textContent = '✓ انضافت';
+      await new Promise((r) => setTimeout(r, 700));
+      $("teamDlg").close();
+      go.classList.remove('is-done');
+      go.textContent = 'إضافة للشيت';
+      load();
+    }
+    go.disabled = false;
   });
 
   /* ----- الإصلاح السريع: «تمّت» و«+ وقت» على المهام التي عليها تنبيه ----- */
@@ -715,4 +732,122 @@
   }, 20 * 1000);
 
   load();
+})();
+
+/* =========================================================
+   منتقي الوقت — بديل حقل الوقت الأصلي (بطيء وصغير)
+   يحوّل كل input[type=time] لزر، وبالكبس بتطلع لوحة:
+   ساعات 1–12 + صباحاً/مساءً + الدقائق كل ربع ساعة.
+   القيمة الحقيقية بتضل بالحقل الأصلي (HH:MM) فباقي الكود ما بيتغيّر.
+   ========================================================= */
+(() => {
+  const MINS = ['00', '15', '30', '45'];
+  const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  let open = null; // { input, pop, btn }
+
+  const parse = (v) => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(v || '');
+    if (!m) return { h: 9, m: 0 };
+    return { h: Math.min(23, +m[1]), m: Math.round(+m[2] / 15) * 15 % 60 };
+  };
+  const fmt = (h, m) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  const label = (v) => {
+    const { h, m } = parse(v);
+    const h12 = h % 12 || 12;
+    return `<b>${h12}:${String(m).padStart(2, '0')}</b><i>${h < 12 ? 'صباحاً' : 'مساءً'}</i>`;
+  };
+
+  function enhance(input) {
+    if (input.dataset.tp) return;
+    input.dataset.tp = '1';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tp-btn';
+    btn.setAttribute('aria-haspopup', 'dialog');
+    const refresh = () => { btn.innerHTML = '<span class="tp-ico" aria-hidden="true">🕘</span>' + label(proto.get.call(input)); };
+    // أي كود بيكتب .value بيحدّث الزر تلقائياً
+    Object.defineProperty(input, 'value', {
+      configurable: true,
+      get() { return proto.get.call(this); },
+      set(v) { proto.set.call(this, v); refresh(); },
+    });
+    input.value = fmt(...Object.values(parse(proto.get.call(input))));
+    input.type = 'hidden';
+    input.after(btn);
+    input.focus = () => btn.focus();
+    btn.addEventListener('click', () => (open && open.input === input ? close() : show(input, btn)));
+    refresh();
+  }
+
+  function show(input, btn) {
+    close();
+    const pop = document.createElement('div');
+    pop.className = 'tp-pop';
+    pop.setAttribute('role', 'dialog');
+    const draw = () => {
+      const { h, m } = parse(input.value);
+      const pm = h >= 12, h12 = h % 12 || 12;
+      pop.innerHTML =
+        `<div class="tp-seg">
+           <button type="button" data-ap="am" class="${pm ? '' : 'on'}">صباحاً</button>
+           <button type="button" data-ap="pm" class="${pm ? 'on' : ''}">مساءً</button>
+         </div>
+         <p class="tp-cap">الساعة</p>
+         <div class="tp-hours">${[...Array(12)].map((_, i) => i + 1).map((n) => `<button type="button" data-h="${n}" class="${n === h12 ? 'on' : ''}">${n}</button>`).join('')}</div>
+         <p class="tp-cap">الدقيقة</p>
+         <div class="tp-mins">${MINS.map((x) => `<button type="button" data-m="${x}" class="${+x === m ? 'on' : ''}">${x}</button>`).join('')}</div>`;
+    };
+    const set = (h, m) => { input.value = fmt(h, m); input.dispatchEvent(new Event('change', { bubbles: true })); draw(); };
+    pop.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      const { h, m } = parse(input.value);
+      const pm = h >= 12;
+      if (b.dataset.ap) set((h % 12) + (b.dataset.ap === 'pm' ? 12 : 0), m);
+      else if (b.dataset.h) set((+b.dataset.h % 12) + (pm ? 12 : 0), m);
+      else if (b.dataset.m) { set(h, +b.dataset.m); setTimeout(close, 140); } // اختيار الدقيقة = خلصنا
+    });
+    draw();
+    (btn.closest('dialog') || document.body).appendChild(pop);
+    btn.classList.add('open');
+    open = { input, pop, btn };
+    place();
+    requestAnimationFrame(() => pop.classList.add('in'));
+    pop.querySelector('.tp-hours .on')?.focus();
+  }
+
+  function place() {
+    if (!open) return;
+    const r = open.btn.getBoundingClientRect(), p = open.pop;
+    const w = p.offsetWidth, hgt = p.offsetHeight;
+    let left = r.right - w; // محاذاة يمين (RTL)
+    left = Math.max(8, Math.min(left, innerWidth - w - 8));
+    const below = r.bottom + 6 + hgt < innerHeight - 8;
+    p.style.left = left + 'px';
+    p.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - 6 - hgt)) + 'px';
+    p.classList.toggle('up', !below);
+  }
+
+  function close() {
+    if (!open) return;
+    const { pop, btn } = open;
+    open = null;
+    btn.classList.remove('open');
+    pop.classList.remove('in');
+    setTimeout(() => pop.remove(), 150);
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    if (open && !open.pop.contains(e.target) && !open.btn.contains(e.target)) close();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (open && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); const b = open.btn; close(); b.focus(); }
+  }, true);
+  addEventListener('resize', close);
+  document.addEventListener('scroll', (e) => { if (open && !open.pop.contains(e.target)) place(); }, true);
+  document.addEventListener('close', close, true); // سكّرت النافذة → سكّر اللوحة
+
+  const scan = (root) => root.querySelectorAll?.('input[type="time"]').forEach(enhance);
+  scan(document);
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && scan(n.matches?.('input[type="time"]') ? n.parentNode : n))))
+    .observe(document.body, { childList: true, subtree: true });
 })();

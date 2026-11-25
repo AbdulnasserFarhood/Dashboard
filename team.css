@@ -256,3 +256,57 @@
 .live-dot{width:9px;height:9px;border-radius:50%;background:var(--low);box-shadow:0 0 0 0 var(--low);animation:liveDot 1.6s ease-out infinite}
 @keyframes liveDot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--low) 70%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
 .live-paused,.live-idle{color:var(--mute);font-size:12px}
+
+/* ===== زر «إضافة للشيت»: ضغط + تحميل + نجاح + خطأ ===== */
+.actions button{transition:transform .12s ease, filter .15s, background-color .2s, border-color .2s}
+.actions button:hover:not(:disabled){filter:brightness(1.08)}
+.actions button:active:not(:disabled){transform:scale(.95)}
+#teamGo{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+#teamGo:disabled{cursor:default}
+#teamGo.is-busy{opacity:.9}
+#teamGo.is-done{background:#2e9e6a;border-color:#2e9e6a;color:#fff;animation:tpPop .35s ease}
+#teamGo.is-err{animation:tpShake .4s ease}
+#teamGo .spin{width:15px;height:15px;border-radius:50%;border:2.5px solid currentColor;border-top-color:transparent;animation:tpSpin .7s linear infinite}
+@keyframes tpSpin{to{transform:rotate(360deg)}}
+@keyframes tpPop{50%{transform:scale(1.05)}}
+@keyframes tpShake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+
+/* ===== منتقي الوقت ===== */
+.tp-btn{
+  width:100%;display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;
+  border-radius:var(--radius-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--ink);
+  font:inherit;font-size:14px;text-align:right;transition:border-color .15s, box-shadow .15s;
+}
+.tp-btn:hover{border-color:var(--primary)}
+.tp-btn.open,.tp-btn:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 20%,transparent)}
+.tp-btn b{font-weight:800;font-size:15px;direction:ltr;unicode-bidi:isolate}
+.tp-btn i{font-style:normal;color:var(--mute);font-size:12.5px}
+.tp-ico{font-size:14px;opacity:.75}
+.fix-time .tp-btn{width:auto;display:inline-flex;padding:4px 8px;font-size:12px;border-width:1px}
+.fix-time .tp-btn b{font-size:12.5px}
+.fix-time .tp-ico{display:none}
+
+.tp-pop{
+  position:fixed;z-index:1000;width:236px;padding:12px;direction:rtl;
+  background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 14px 40px rgba(0,0,0,.18);
+  opacity:0;transform:translateY(-6px) scale(.97);transform-origin:top right;
+  transition:opacity .15s ease, transform .15s ease;
+}
+.tp-pop.up{transform-origin:bottom right;transform:translateY(6px) scale(.97)}
+.tp-pop.in{opacity:1;transform:none}
+.tp-cap{margin:10px 2px 6px;font-size:11.5px;color:var(--mute);font-weight:700}
+.tp-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:11px;background:var(--bg)}
+.tp-hours{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.tp-mins{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tp-pop button{
+  border:0;border-radius:9px;padding:8px 0;cursor:pointer;font:inherit;font-weight:700;font-size:14px;
+  background:var(--bg);color:var(--ink);transition:background-color .12s, color .12s, transform .1s;
+}
+.tp-seg button{background:transparent;font-size:13px;padding:7px 0}
+.tp-mins button{direction:ltr}
+.tp-pop button:hover{background:color-mix(in srgb,var(--primary) 14%,var(--bg))}
+.tp-pop button:active{transform:scale(.92)}
+.tp-pop button.on{background:var(--primary);color:var(--primary-ink)}
+.tp-seg button.on{background:var(--accent);color:#fff}
+.tp-pop button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
